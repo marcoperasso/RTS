@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">RTS</string>
+    <string name="title_activity_player">PlayerActivity</string>
+    <string name="local_service_stopped">Serice stopped</string>
+    <string name="local_service_started">Service started</string>
+    <string name="local_service_label">Radio singing</string>
+    <!-- Strings used for fragments for navigation -->
+
+</resources>

@@ -109,6 +109,7 @@ public class RadioService extends Service implements AudioManager.OnAudioFocusCh
                 .setContentTitle("Radio Torriglia Sound")
                 .setSilent(true)
                 .setAutoCancel(false)
+                .setOngoing(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .addAction(R.drawable.ic_stop, "Stop", pStop)
                 .addAction(R.drawable.ic_pause, "Pause/Resume", pPause);

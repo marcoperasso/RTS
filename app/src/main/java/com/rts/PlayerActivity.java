@@ -9,7 +9,6 @@ import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.ImageButton;
 
 public class PlayerActivity extends AppCompatActivity implements AudioManager.OnAudioFocusChangeListener {
@@ -17,7 +16,7 @@ public class PlayerActivity extends AppCompatActivity implements AudioManager.On
     private ImageButton btnPlayPause;
     private boolean mPlaybackDelayed;
     private boolean mResumeOnFocusGain;
-    private Object mFocusLock = new Object();
+    private final Object mFocusLock = new Object();
     private AudioManager mAudioManager;
     private AudioAttributes mPlaybackAttributes;
 
@@ -42,6 +41,7 @@ public class PlayerActivity extends AppCompatActivity implements AudioManager.On
         tryPlay();
 
         btnPlayPause = (ImageButton) findViewById(R.id.ibPlayPause);
+
         btnPlayPause.setOnClickListener(v -> {
             if (mPlayer.isPlaying()) {
                 mPlayer.pause();

@@ -3,15 +3,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/background"
     android:gravity="center"
     android:orientation="vertical"
-    android:background="@drawable/background"
     tools:context=".PlayerActivity">
 
     <ImageView
         android:id="@+id/ivLogo"
         android:layout_width="match_parent"
-        android:layout_height="500dp"
+        android:layout_height="400dp"
         android:background="@android:color/transparent"
         android:contentDescription="@string/logo_descri"
         android:src="@drawable/logo" />
@@ -52,6 +52,16 @@
             android:scaleType="fitXY"
             android:src="@drawable/youtube" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvWait"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:gravity="center"
+        android:text="@string/buffering"
+        android:textAlignment="center"
+        android:textSize="30sp"
+        android:visibility="invisible"/>
 
     <ImageButton
         android:id="@+id/ibPlayPause"

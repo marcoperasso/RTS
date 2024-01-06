@@ -31,7 +31,7 @@ public class RadioService extends Service implements AudioManager.OnAudioFocusCh
         synchronized (mRunningLock) {
             serviceRunning = set;
         }
-        sendMessage();
+        sendServiceStateMessage();
     }
 
     public static boolean isServiceRunning() {
@@ -49,12 +49,15 @@ public class RadioService extends Service implements AudioManager.OnAudioFocusCh
     private MusicIntentReceiver myReceiver;
     private boolean firstTimeForMusicIntentReceiver = true;
     public static String ServiceStateMsg = "service_state";
+    public static String MediaReadyMsg = "media_ready";
     private AudioAttributes mPlaybackAttributes;
     private MediaPlayer mPlayer;
 
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
         playRadio();
+
+        sendMediaReadyMessage();
     }
 
     private class MusicIntentReceiver extends BroadcastReceiver {
@@ -126,12 +129,14 @@ public class RadioService extends Service implements AudioManager.OnAudioFocusCh
         return super.onStartCommand(intent, flags, startId);
     }
 
-    // Supposing that your value is an integer declared somewhere as: int myInteger;
-    private void sendMessage() {
+    private void sendServiceStateMessage() {
         Intent intent = new Intent(ServiceStateMsg);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
-
+    private void sendMediaReadyMessage() {
+        Intent intent = new Intent(MediaReadyMsg);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
     private void pauseRadio() {
         mPlayer.pause();
         synchronized (mFocusLock) {

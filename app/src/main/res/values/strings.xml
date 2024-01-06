@@ -8,8 +8,11 @@
     <string name="follow_us_on_instagram">Follow us on Instagram</string>
     <string name="follow_us_on_facebook">Follow us on Facebook</string>
     <string name="follow_us_on_youtube">Follow us on YouTube</string>
-    <string name="buffering">Buffering...</string>
+    <string name="buffering">Buffering…</string>
     <string name="stop_button">Stop button</string>
+    <string name="stop">Stop</string>
+    <string name="resume">Resume</string>
+    <string name="pause">Pause</string>
     <!-- Strings used for fragments for navigation -->
 
 </resources>

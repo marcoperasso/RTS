@@ -4,7 +4,7 @@
     <string name="local_service_started">Service started</string>
     <string name="local_service_label">Radio singing</string>
     <string name="logo_descri">Logo</string>
-    <string name="play_pause_button">Play/Pause button</string>
+    <string name="pause_button">Pause button</string>
     <string name="follow_us_on_instagram">Follow us on Instagram</string>
     <string name="follow_us_on_facebook">Follow us on Facebook</string>
     <string name="follow_us_on_youtube">Follow us on YouTube</string>
@@ -13,6 +13,7 @@
     <string name="stop">Stop</string>
     <string name="resume">Resume</string>
     <string name="pause">Pause</string>
+    <string name="play_button">Play button</string>
     <!-- Strings used for fragments for navigation -->
 
 </resources>

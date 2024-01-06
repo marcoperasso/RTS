@@ -17,7 +17,8 @@ import android.widget.Toast;
 
 public class PlayerActivity extends AppCompatActivity {
 
-    private ImageButton btnPlayPause;
+    private ImageButton btnPlay;
+    private ImageButton btnPause;
     private ImageButton btnStop;
     private TextView tvWait;
 
@@ -25,8 +26,10 @@ public class PlayerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
-        btnPlayPause = (ImageButton) findViewById(R.id.ibPlayPause);
-        btnPlayPause.setOnClickListener(v -> playOrPause());
+        btnPlay = (ImageButton) findViewById(R.id.ibPlay);
+        btnPlay.setOnClickListener(v -> playOrPause());
+        btnPause = (ImageButton) findViewById(R.id.ibPause);
+        btnPause.setOnClickListener(v -> playOrPause());
         btnStop = (ImageButton) findViewById(R.id.ibStop);
         btnStop.setOnClickListener(v -> stop());
 
@@ -60,9 +63,9 @@ public class PlayerActivity extends AppCompatActivity {
     private final BroadcastReceiver messageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (intent.getAction().equals(RadioService.ServiceStateMsg))
+            if (RadioService.ServiceStateMsg.equals(intent.getAction()))
                 updateButtons();
-            else if (intent.getAction().equals(RadioService.MediaReadyMsg)) {
+            else if (RadioService.MediaReadyMsg.equals(intent.getAction())) {
                 tvWait.setVisibility(View.INVISIBLE);
                 updateButtons();
             } else if (intent.getAction().equals(RadioService.PauseStateMsg)) {
@@ -89,7 +92,8 @@ public class PlayerActivity extends AppCompatActivity {
 
     private void startRadioService() {
         tvWait.setVisibility(View.VISIBLE);
-        btnPlayPause.setEnabled(false);
+        btnPlay.setEnabled(false);
+        btnPause.setEnabled(false);
         btnStop.setEnabled(false);
 
         startForegroundService(new Intent(this, RadioService.class));
@@ -110,12 +114,21 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void updateButtons() {
-        btnPlayPause.setImageResource(RadioService.isServicePlaying() ? R.drawable.pause : R.drawable.play);
-        btnPlayPause.setEnabled(RadioService.isNotServiceMediaPlayerPreparing());
-        btnStop.setVisibility(RadioService.isServiceRunning() && RadioService.isNotServiceMediaPlayerPreparing()
+        boolean notPreparing = RadioService.isNotServiceMediaPlayerPreparing();
+        boolean playing = RadioService.isServicePlaying();
+        boolean running = RadioService.isServiceRunning();
+        btnPlay.setEnabled(notPreparing);
+        btnPlay.setVisibility(playing
+                ? View.GONE
+                : View.VISIBLE);
+        btnPause.setEnabled(notPreparing);
+        btnPause.setVisibility(playing
                 ? View.VISIBLE
                 : View.GONE);
-        btnStop.setEnabled(RadioService.isNotServiceMediaPlayerPreparing());
+        btnStop.setVisibility(running && notPreparing
+                ? View.VISIBLE
+                : View.GONE);
+        btnStop.setEnabled(notPreparing);
     }
 
     @Override

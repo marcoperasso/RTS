@@ -81,12 +81,21 @@
             android:visibility="gone" />
 
         <ImageButton
-            android:id="@+id/ibPlayPause"
+            android:id="@+id/ibPlay"
             android:layout_width="150dp"
             android:layout_height="150dp"
             android:layout_margin="2dp"
             android:background="@android:color/transparent"
-            android:contentDescription="@string/play_pause_button"
+            android:contentDescription="@string/play_button"
+            android:scaleType="fitXY"
+            android:src="@drawable/play" />
+        <ImageButton
+            android:id="@+id/ibPause"
+            android:layout_width="150dp"
+            android:layout_height="150dp"
+            android:layout_margin="2dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/pause_button"
             android:scaleType="fitXY"
             android:src="@drawable/pause" />
     </LinearLayout>

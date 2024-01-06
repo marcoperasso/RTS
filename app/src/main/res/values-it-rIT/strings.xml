@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Radio Torriglia Sound</string>
+    <string name="local_service_stopped">Servizio arrestato</string>
+    <string name="local_service_started">Servizio avviato</string>
+    <string name="local_service_label">Radio in esecuzone</string>
+    <string name="logo_descri">Logo</string>
+    <string name="follow_us_on_instagram">Seguici su Instagram</string>
+    <string name="follow_us_on_facebook">Seguici su Facebook</string>
+    <string name="follow_us_on_youtube">Seguici su YouTube</string>
+    <string name="buffering">Buffering…</string>
+    <string name="stop_button">Bottone di arresto</string>
+    <string name="stop">Arresta</string>
+    <string name="resume">Riprendi</string>
+    <string name="pause">Pausa</string>
+    <string name="play_button">Bottone di riproduzione</string>
+    <string name="pause_button">Bottone di pausa</string>
+</resources>

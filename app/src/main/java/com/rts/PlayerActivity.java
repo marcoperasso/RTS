@@ -2,7 +2,10 @@ package com.rts;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
@@ -19,11 +22,31 @@ public class PlayerActivity extends AppCompatActivity implements AudioManager.On
     private final Object mFocusLock = new Object();
     private AudioManager mAudioManager;
     private AudioAttributes mPlaybackAttributes;
+    private MusicIntentReceiver myReceiver;
+    private boolean firstTimeForMusicIntentReceiver = true;
+
+    private class MusicIntentReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            //all'avvio viene ricevuto il messaggio anche senza che le cuffie siano state toccate
+            if (firstTimeForMusicIntentReceiver) {
+                firstTimeForMusicIntentReceiver = false;
+                return;
+            }
+            int state = intent.getIntExtra("state", -1);
+            if (state == 0)
+                pauseRadio();
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
+        btnPlayPause = (ImageButton) findViewById(R.id.ibPlayPause);
+        myReceiver = new MusicIntentReceiver();
+        IntentFilter filter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
+        registerReceiver(myReceiver, filter);
 
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mPlaybackAttributes = new AudioAttributes.Builder()
@@ -38,26 +61,29 @@ public class PlayerActivity extends AppCompatActivity implements AudioManager.On
         mPlayer.setAudioAttributes(mPlaybackAttributes);
 
         // requesting audio focus
-        tryPlay();
-
-        btnPlayPause = (ImageButton) findViewById(R.id.ibPlayPause);
+        playRadio();
 
         btnPlayPause.setOnClickListener(v -> {
             if (mPlayer.isPlaying()) {
-                mPlayer.pause();
-                synchronized (mFocusLock) {
-                    mPlaybackDelayed = false;
-                    mResumeOnFocusGain = false;
-                }
+                pauseRadio();
             } else {
-                tryPlay();
+                playRadio();
             }
-            updateImageButton();
         });
 
     }
 
-    private void tryPlay() {
+    private void pauseRadio() {
+        mPlayer.pause();
+        synchronized (mFocusLock) {
+            mPlaybackDelayed = false;
+            mResumeOnFocusGain = false;
+        }
+
+        updateImageButton();
+    }
+
+    private void playRadio() {
         AudioFocusRequest focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAudioAttributes(mPlaybackAttributes)
                 .setAcceptsDelayedFocusGain(true)
@@ -75,6 +101,7 @@ public class PlayerActivity extends AppCompatActivity implements AudioManager.On
                 mPlaybackDelayed = true;
             }
         }
+        updateImageButton();
     }
 
     // implementation of the OnAudioFocusChangeListener
@@ -117,9 +144,19 @@ public class PlayerActivity extends AppCompatActivity implements AudioManager.On
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+    }
+
+    @Override
     protected void onDestroy() {
         mPlayer.stop();
-
+        unregisterReceiver(myReceiver);
         super.onDestroy();
     }
 }

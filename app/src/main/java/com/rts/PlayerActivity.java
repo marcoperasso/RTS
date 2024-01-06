@@ -2,6 +2,7 @@ package com.rts;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -13,6 +14,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
 public class PlayerActivity extends AppCompatActivity implements AudioManager.OnAudioFocusChangeListener {
     MediaPlayer mPlayer;
@@ -44,6 +46,15 @@ public class PlayerActivity extends AppCompatActivity implements AudioManager.On
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
         btnPlayPause = (ImageButton) findViewById(R.id.ibPlayPause);
+
+        ImageButton btnInstagram = (ImageButton) findViewById(R.id.ibInstagram);
+        btnInstagram.setOnClickListener(v -> openFromUrl("https://www.instagram.com/radiotorrigliasound/"));
+        ImageButton btnFacebook = (ImageButton) findViewById(R.id.ibFacebook);
+        btnFacebook.setOnClickListener(v -> openFromUrl("https://www.facebook.com/ratoso.torriglia"));
+
+        ImageButton btnYoutube = (ImageButton) findViewById(R.id.ibYoutube);
+        btnYoutube.setOnClickListener(v -> openFromUrl("https://www.youtube.com/@radiotorrigliasound9473"));
+
         myReceiver = new MusicIntentReceiver();
         IntentFilter filter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
         registerReceiver(myReceiver, filter);
@@ -71,6 +82,16 @@ public class PlayerActivity extends AppCompatActivity implements AudioManager.On
             }
         });
 
+    }
+
+    private void openFromUrl(String url) {
+        Intent webIntent = new Intent(Intent.ACTION_VIEW,
+                Uri.parse(url));
+        try {
+            startActivity(webIntent);
+        } catch (ActivityNotFoundException ex) {
+            Toast.makeText(this, ex.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void pauseRadio() {

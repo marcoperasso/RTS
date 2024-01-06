@@ -3,23 +3,63 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:gravity="center"
+    android:orientation="vertical"
+    android:background="@drawable/background"
     tools:context=".PlayerActivity">
 
     <ImageView
         android:id="@+id/ivLogo"
         android:layout_width="match_parent"
         android:layout_height="500dp"
-        android:src="@drawable/logo"
+        android:background="@android:color/transparent"
         android:contentDescription="@string/logo_descri"
-        android:background="@android:color/transparent" />
+        android:src="@drawable/logo" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/ibInstagram"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_margin="5dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/follow_us_on_instagram"
+            android:scaleType="fitXY"
+            android:src="@drawable/instagram" />
+
+        <ImageButton
+            android:id="@+id/ibFacebook"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_margin="5dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/follow_us_on_facebook"
+            android:scaleType="fitXY"
+            android:src="@drawable/facebook" />
+
+        <ImageButton
+            android:id="@+id/ibYoutube"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_margin="5dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/follow_us_on_youtube"
+            android:scaleType="fitXY"
+            android:src="@drawable/youtube" />
+    </LinearLayout>
 
     <ImageButton
         android:id="@+id/ibPlayPause"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/pause"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_margin="20dp"
+        android:background="@android:color/transparent"
         android:contentDescription="@string/play_pause_button"
-        android:background="@android:color/transparent" />
+        android:scaleType="fitXY"
+        android:src="@drawable/pause" />
 </LinearLayout>

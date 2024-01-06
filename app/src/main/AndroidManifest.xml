@@ -17,7 +17,8 @@
             android:name=".PlayerActivity"
             android:exported="true"
             android:theme="@style/Theme.RTS"
-            android:screenOrientation="portrait">
+            android:screenOrientation="portrait"
+            tools:ignore="LockedOrientationActivity">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

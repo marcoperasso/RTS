@@ -42,6 +42,9 @@ public class PlayerActivity extends AppCompatActivity {
         ImageButton btnYoutube = findViewById(R.id.ibYoutube);
         btnYoutube.setOnClickListener(v -> openFromUrl("https://www.youtube.com/@radiotorrigliasound9473"));
 
+        ImageButton btnRts = findViewById(R.id.ibRTS);
+        btnRts.setOnClickListener(v -> openFromUrl("https://www.radiotorrigliasound.it/contatti"));
+
         tvWait = findViewById(R.id.tvWait);
 
     }

@@ -51,6 +51,15 @@
             android:contentDescription="@string/follow_us_on_youtube"
             android:scaleType="fitXY"
             android:src="@drawable/youtube" />
+        <ImageButton
+            android:id="@+id/ibRTS"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_margin="5dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="@string/contact_us"
+            android:scaleType="fitXY"
+            android:src="@drawable/mail" />
     </LinearLayout>
 
     <TextView

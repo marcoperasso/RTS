@@ -17,4 +17,6 @@
     <string name="pause_button">Bottone di pausa</string>
     <string name="radio_running">Radio in esecuzione</string>
     <string name="radio_paused">Radio in pausa</string>
+    <string name="media_player_error">Errore del media player</string>
+    <string name="internet_not_available">Internet non disponibile</string>
 </resources>

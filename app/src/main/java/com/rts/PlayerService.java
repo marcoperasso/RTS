@@ -12,7 +12,10 @@ import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.IBinder;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
@@ -20,7 +23,10 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.io.IOException;
 
-public class PlayerService extends Service implements AudioManager.OnAudioFocusChangeListener, MediaPlayer.OnPreparedListener {
+public class PlayerService extends Service implements
+        AudioManager.OnAudioFocusChangeListener,
+        MediaPlayer.OnPreparedListener,
+        MediaPlayer.OnErrorListener {
 
     private static final String CHANNEL_ID = "RADIO_SERVICE_CHANNEL";
     private static PlayerService serviceRunning = null;
@@ -80,6 +86,20 @@ public class PlayerService extends Service implements AudioManager.OnAudioFocusC
         sendMediaReadyMessage();
     }
 
+    @Override
+    public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
+        stopAndNotify(getString(R.string.media_player_error));
+        return true;
+    }
+
+    private void stopAndNotify(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        serviceMediaPlayerPreparing = false;
+        sendMediaReadyMessage();
+        stopForeground(true);
+        stopSelf();
+    }
+
     private class MusicIntentReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -93,10 +113,16 @@ public class PlayerService extends Service implements AudioManager.OnAudioFocusC
                 pauseRadio();
         }
     }
-
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager != null ? connectivityManager.getActiveNetworkInfo() : null;
+        return activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
+    }
     @Override
     public void onCreate() {
         super.onCreate();
+
         NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "RTS", NotificationManager.IMPORTANCE_DEFAULT);
         channel.setDescription("RTS channel for foreground service notification");
 
@@ -122,6 +148,11 @@ public class PlayerService extends Service implements AudioManager.OnAudioFocusC
                 .addAction(R.drawable.ic_pause, getString(R.string.pause), pPause);
         startForeground(notificationId, mBuilder.build());
 
+        if (!isNetworkAvailable())
+        {
+            stopAndNotify(getString(R.string.internet_not_available));
+            return;
+        }
         mPlaybackAttributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
@@ -132,10 +163,12 @@ public class PlayerService extends Service implements AudioManager.OnAudioFocusC
         try {
             mPlayer.setDataSource("https://sr7.inmystream.it/proxy/radiotor?mp=/stream");
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            stopAndNotify(e.getMessage());
+           return;
         }
         mPlayer.setAudioAttributes(mPlaybackAttributes);
         mPlayer.setOnPreparedListener(this);
+        mPlayer.setOnErrorListener(this);
         mPlayer.prepareAsync();
         setServiceRunning(this);
 
@@ -165,8 +198,7 @@ public class PlayerService extends Service implements AudioManager.OnAudioFocusC
                     mBuilder
                             .setContentTitle(getString(R.string.radio_paused))
                             .addAction(R.drawable.ic_pause, getString(R.string.resume), pPause);
-                }
-                else {
+                } else {
                     mPlayer.start();
                     mBuilder
                             .setContentTitle(getString(R.string.radio_running))
@@ -267,13 +299,15 @@ public class PlayerService extends Service implements AudioManager.OnAudioFocusC
 
     @Override
     public void onDestroy() {
-        mAudioManager.abandonAudioFocusRequest(mFocusRequest);
+        if (mAudioManager != null && mFocusRequest != null)
+            mAudioManager.abandonAudioFocusRequest(mFocusRequest);
         setServiceRunning(null);
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         notificationManager.cancel(notificationId);
-        mPlayer.stop();
-        mPlayer.release();
-        unregisterReceiver(myReceiver);
+        if (mPlayer != null)
+            mPlayer.release();
+        if (myReceiver != null)
+            unregisterReceiver(myReceiver);
         super.onDestroy();
     }
 }

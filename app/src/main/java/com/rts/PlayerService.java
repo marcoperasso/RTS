@@ -80,7 +80,7 @@ public class PlayerService extends Service implements
 
     @Override
     public void onPrepared(MediaPlayer mediaPlayer) {
-        playRadio();
+        tryPlay();
 
         serviceMediaPlayerPreparing = false;
         sendMediaReadyMessage();
@@ -88,11 +88,9 @@ public class PlayerService extends Service implements
 
     @Override
     public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
-        if (!isNetworkAvailable())
-        {
+        if (isNetworkDown()) {
             stopAndNotify(getString(R.string.internet_not_available));
-        }
-        else {
+        } else {
             stopAndNotify(getString(R.string.media_player_error));
         }
         return true;
@@ -119,12 +117,14 @@ public class PlayerService extends Service implements
                 pauseRadio();
         }
     }
-    private boolean isNetworkAvailable() {
+
+    private boolean isNetworkDown() {
         ConnectivityManager connectivityManager
                 = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager != null ? connectivityManager.getActiveNetworkInfo() : null;
-        return activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
+        return activeNetworkInfo == null || !activeNetworkInfo.isConnectedOrConnecting();
     }
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -154,8 +154,7 @@ public class PlayerService extends Service implements
                 .addAction(R.drawable.ic_pause, getString(R.string.pause), pPause);
         startForeground(notificationId, mBuilder.build());
 
-        if (!isNetworkAvailable())
-        {
+        if (isNetworkDown()) {
             stopAndNotify(getString(R.string.internet_not_available));
             return;
         }
@@ -170,7 +169,7 @@ public class PlayerService extends Service implements
             mPlayer.setDataSource("https://sr7.inmystream.it/proxy/radiotor?mp=/stream");
         } catch (IOException e) {
             stopAndNotify(e.getMessage());
-           return;
+            return;
         }
         mPlayer.setAudioAttributes(mPlaybackAttributes);
         mPlayer.setOnPreparedListener(this);
@@ -195,28 +194,36 @@ public class PlayerService extends Service implements
                 stopSelf();
                 return START_NOT_STICKY;
             } else if (ACTION_PAUSE_LISTEN.equals(intent.getAction())) {
-                NotificationManager notificationManager = getSystemService(NotificationManager.class);
-                mBuilder
-                        .clearActions()
-                        .addAction(R.drawable.ic_stop, getString(R.string.stop), pStop);
                 if (mPlayer.isPlaying()) {
                     mPlayer.pause();
-                    mBuilder
-                            .setContentTitle(getString(R.string.radio_paused))
-                            .addAction(R.drawable.ic_pause, getString(R.string.resume), pPause);
                 } else {
-                    mPlayer.start();
-                    mBuilder
-                            .setContentTitle(getString(R.string.radio_running))
-                            .addAction(R.drawable.ic_pause, getString(R.string.pause), pPause);
+                    tryPlay();
                 }
+                updateNotification();
                 sendPauseStateMessage();
 
-                notificationManager.notify(notificationId, mBuilder.build());
                 return START_NOT_STICKY;
             }
         }
         return super.onStartCommand(intent, flags, startId);
+    }
+
+    private void updateNotification() {
+        NotificationManager notificationManager = getSystemService(NotificationManager.class);
+        mBuilder
+                .clearActions()
+                .addAction(R.drawable.ic_stop, getString(R.string.stop), pStop);
+        if (mPlayer.isPlaying()) {
+            mBuilder
+                    .setContentTitle(getString(R.string.radio_running))
+                    .addAction(R.drawable.ic_pause, getString(R.string.pause), pPause);
+
+        } else {
+            mBuilder
+                    .setContentTitle(getString(R.string.radio_paused))
+                    .addAction(R.drawable.ic_pause, getString(R.string.resume), pPause);
+        }
+        notificationManager.notify(notificationId, mBuilder.build());
     }
 
     private void sendServiceStateMessage() {
@@ -240,9 +247,10 @@ public class PlayerService extends Service implements
             mPlaybackDelayed = false;
             mResumeOnFocusGain = false;
         }
+        updateNotification();
     }
 
-    private void playRadio() {
+    private void tryPlay() {
         mFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAudioAttributes(mPlaybackAttributes)
                 .setAcceptsDelayedFocusGain(true)
@@ -295,6 +303,7 @@ public class PlayerService extends Service implements
                 mPlayer.pause();
                 break;
         }
+        updateNotification();
     }
 
     @Nullable

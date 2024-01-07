@@ -88,7 +88,13 @@ public class PlayerService extends Service implements
 
     @Override
     public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
-        stopAndNotify(getString(R.string.media_player_error));
+        if (!isNetworkAvailable())
+        {
+            stopAndNotify(getString(R.string.internet_not_available));
+        }
+        else {
+            stopAndNotify(getString(R.string.media_player_error));
+        }
         return true;
     }
 

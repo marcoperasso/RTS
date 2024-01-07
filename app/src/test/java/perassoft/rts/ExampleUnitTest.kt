@@ -1,4 +1,4 @@
-package com.rts
+package perassoft.rts
 
 import org.junit.Test
 

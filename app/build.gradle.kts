@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.rts"
+    namespace = "perassoft.rts"
     compileSdk = 33
 
     defaultConfig {
-        applicationId = "com.rts"
+        applicationId = "perassoft.rts"
         minSdk = 27
         targetSdk = 33
         versionCode = 1

@@ -1,4 +1,4 @@
-package com.rts;
+package perassoft.rts;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;

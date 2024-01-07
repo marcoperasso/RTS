@@ -1,4 +1,4 @@
-package com.rts.ui.theme
+package perassoft.rts.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

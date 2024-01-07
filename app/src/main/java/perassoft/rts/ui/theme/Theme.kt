@@ -1,4 +1,4 @@
-package com.rts.ui.theme
+package perassoft.rts.ui.theme
 
 import android.app.Activity
 import android.os.Build

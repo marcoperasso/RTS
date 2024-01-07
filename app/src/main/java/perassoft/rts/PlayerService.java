@@ -1,4 +1,4 @@
-package com.rts;
+package perassoft.rts;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -20,6 +20,7 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 
 import java.io.IOException;
 

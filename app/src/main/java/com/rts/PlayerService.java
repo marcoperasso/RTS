@@ -20,10 +20,10 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.io.IOException;
 
-public class RadioService extends Service implements AudioManager.OnAudioFocusChangeListener, MediaPlayer.OnPreparedListener {
+public class PlayerService extends Service implements AudioManager.OnAudioFocusChangeListener, MediaPlayer.OnPreparedListener {
 
     private static final String CHANNEL_ID = "RADIO_SERVICE_CHANNEL";
-    private static RadioService serviceRunning = null;
+    private static PlayerService serviceRunning = null;
     private static final int notificationId = 1;
     public static final String ACTION_STOP_LISTEN = "action_stop_listen";
     public static final String ACTION_PAUSE_LISTEN = "action_pause_listen";
@@ -33,7 +33,7 @@ public class RadioService extends Service implements AudioManager.OnAudioFocusCh
     private PendingIntent pStop;
     private PendingIntent pPause;
 
-    private void setServiceRunning(RadioService svc) {
+    private void setServiceRunning(PlayerService svc) {
         synchronized (mRunningLock) {
             serviceRunning = svc;
         }
@@ -100,11 +100,11 @@ public class RadioService extends Service implements AudioManager.OnAudioFocusCh
         NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "RTS", NotificationManager.IMPORTANCE_DEFAULT);
         channel.setDescription("RTS channel for foreground service notification");
 
-        Intent stop = new Intent(this, RadioService.class);
+        Intent stop = new Intent(this, PlayerService.class);
         stop.setAction(ACTION_STOP_LISTEN);
         pStop = PendingIntent.getService(this, 0, stop, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        Intent pause = new Intent(this, RadioService.class);
+        Intent pause = new Intent(this, PlayerService.class);
         pause.setAction(ACTION_PAUSE_LISTEN);
         pPause = PendingIntent.getService(this, 0, pause, PendingIntent.FLAG_IMMUTABLE);
 
@@ -113,7 +113,7 @@ public class RadioService extends Service implements AudioManager.OnAudioFocusCh
 
         mBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_radio_playing)
-                .setContentTitle("Radio Torriglia Sound")
+                .setContentTitle(getString(R.string.radio_running))
                 .setSilent(true)
                 .setAutoCancel(false)
                 .setOngoing(true)
@@ -157,15 +157,20 @@ public class RadioService extends Service implements AudioManager.OnAudioFocusCh
                 return START_NOT_STICKY;
             } else if (ACTION_PAUSE_LISTEN.equals(intent.getAction())) {
                 NotificationManager notificationManager = getSystemService(NotificationManager.class);
-                mBuilder.clearActions()
+                mBuilder
+                        .clearActions()
                         .addAction(R.drawable.ic_stop, getString(R.string.stop), pStop);
                 if (mPlayer.isPlaying()) {
                     mPlayer.pause();
-                    mBuilder.addAction(R.drawable.ic_pause, getString(R.string.resume), pPause);
+                    mBuilder
+                            .setContentTitle(getString(R.string.radio_paused))
+                            .addAction(R.drawable.ic_pause, getString(R.string.resume), pPause);
                 }
                 else {
                     mPlayer.start();
-                    mBuilder.addAction(R.drawable.ic_pause, getString(R.string.pause), pPause);
+                    mBuilder
+                            .setContentTitle(getString(R.string.radio_running))
+                            .addAction(R.drawable.ic_pause, getString(R.string.pause), pPause);
                 }
                 sendPauseStateMessage();
 

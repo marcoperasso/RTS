@@ -26,35 +26,35 @@ public class PlayerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
-        btnPlay = (ImageButton) findViewById(R.id.ibPlay);
+        btnPlay = findViewById(R.id.ibPlay);
         btnPlay.setOnClickListener(v -> playOrPause());
-        btnPause = (ImageButton) findViewById(R.id.ibPause);
+        btnPause = findViewById(R.id.ibPause);
         btnPause.setOnClickListener(v -> playOrPause());
-        btnStop = (ImageButton) findViewById(R.id.ibStop);
+        btnStop = findViewById(R.id.ibStop);
         btnStop.setOnClickListener(v -> stop());
 
-        ImageButton btnInstagram = (ImageButton) findViewById(R.id.ibInstagram);
+        ImageButton btnInstagram = findViewById(R.id.ibInstagram);
         btnInstagram.setOnClickListener(v -> openFromUrl("https://www.instagram.com/radiotorrigliasound/"));
 
-        ImageButton btnFacebook = (ImageButton) findViewById(R.id.ibFacebook);
+        ImageButton btnFacebook = findViewById(R.id.ibFacebook);
         btnFacebook.setOnClickListener(v -> openFromUrl("https://www.facebook.com/ratoso.torriglia"));
 
-        ImageButton btnYoutube = (ImageButton) findViewById(R.id.ibYoutube);
+        ImageButton btnYoutube = findViewById(R.id.ibYoutube);
         btnYoutube.setOnClickListener(v -> openFromUrl("https://www.youtube.com/@radiotorrigliasound9473"));
 
-        tvWait = (TextView) findViewById(R.id.tvWait);
+        tvWait = findViewById(R.id.tvWait);
 
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (!RadioService.isServiceRunning()) {
+        if (!PlayerService.isServiceRunning()) {
             startRadioService();
         }
-        IntentFilter filter = new IntentFilter(RadioService.ServiceStateMsg);
-        filter.addAction(RadioService.MediaReadyMsg);
-        filter.addAction(RadioService.PauseStateMsg);
+        IntentFilter filter = new IntentFilter(PlayerService.ServiceStateMsg);
+        filter.addAction(PlayerService.MediaReadyMsg);
+        filter.addAction(PlayerService.PauseStateMsg);
         LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver, filter);
         updateButtons();
     }
@@ -63,12 +63,12 @@ public class PlayerActivity extends AppCompatActivity {
     private final BroadcastReceiver messageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (RadioService.ServiceStateMsg.equals(intent.getAction()))
+            if (PlayerService.ServiceStateMsg.equals(intent.getAction()))
                 updateButtons();
-            else if (RadioService.MediaReadyMsg.equals(intent.getAction())) {
+            else if (PlayerService.MediaReadyMsg.equals(intent.getAction())) {
                 tvWait.setVisibility(View.INVISIBLE);
                 updateButtons();
-            } else if (intent.getAction().equals(RadioService.PauseStateMsg)) {
+            } else if (intent.getAction().equals(PlayerService.PauseStateMsg)) {
                 updateButtons();
             }
         }
@@ -81,9 +81,9 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void playOrPause() {
-        if (RadioService.isServiceRunning()) {
-            Intent intent = new Intent(this, RadioService.class);
-            intent.setAction(RadioService.ACTION_PAUSE_LISTEN);
+        if (PlayerService.isServiceRunning()) {
+            Intent intent = new Intent(this, PlayerService.class);
+            intent.setAction(PlayerService.ACTION_PAUSE_LISTEN);
             startService(intent);
         } else {
             startRadioService();
@@ -96,11 +96,11 @@ public class PlayerActivity extends AppCompatActivity {
         btnPause.setEnabled(false);
         btnStop.setEnabled(false);
 
-        startForegroundService(new Intent(this, RadioService.class));
+        startForegroundService(new Intent(this, PlayerService.class));
     }
 
     private void stop() {
-        stopService(new Intent(this, RadioService.class));
+        stopService(new Intent(this, PlayerService.class));
     }
 
     private void openFromUrl(String url) {
@@ -114,9 +114,9 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void updateButtons() {
-        boolean notPreparing = RadioService.isNotServiceMediaPlayerPreparing();
-        boolean playing = RadioService.isServicePlaying();
-        boolean running = RadioService.isServiceRunning();
+        boolean notPreparing = PlayerService.isNotServiceMediaPlayerPreparing();
+        boolean playing = PlayerService.isServicePlaying();
+        boolean running = PlayerService.isServiceRunning();
         btnPlay.setEnabled(notPreparing);
         btnPlay.setVisibility(playing
                 ? View.GONE

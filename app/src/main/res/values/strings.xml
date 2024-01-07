@@ -14,6 +14,8 @@
     <string name="resume">Resume</string>
     <string name="pause">Pause</string>
     <string name="play_button">Play button</string>
+    <string name="radio_running">Radio playing</string>
+    <string name="radio_paused">Radio paused</string>
     <!-- Strings used for fragments for navigation -->
 
 </resources>

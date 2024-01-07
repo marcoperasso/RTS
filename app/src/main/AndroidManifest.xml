@@ -28,7 +28,7 @@
             </intent-filter>
         </activity>
         <service
-            android:name=".RadioService"
+            android:name=".PlayerService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="false">
         </service>

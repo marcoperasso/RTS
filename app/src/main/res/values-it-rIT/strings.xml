@@ -15,4 +15,6 @@
     <string name="pause">Pausa</string>
     <string name="play_button">Bottone di riproduzione</string>
     <string name="pause_button">Bottone di pausa</string>
+    <string name="radio_running">Radio in esecuzione</string>
+    <string name="radio_paused">Radio in pausa</string>
 </resources>

@@ -3,6 +3,7 @@ package perassoft.rts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
+import android.annotation.SuppressLint;
 import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -12,6 +13,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -20,18 +22,17 @@ public class PlayerActivity extends AppCompatActivity {
     private ImageButton btnPlay;
     private ImageButton btnPause;
     private ImageButton btnStop;
-    private TextView tvWait;
+    private ProgressBar pbWait;
+    private TextView tvWelcome;
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
         btnPlay = findViewById(R.id.ibPlay);
-        btnPlay.setOnClickListener(v -> playOrPause());
         btnPause = findViewById(R.id.ibPause);
-        btnPause.setOnClickListener(v -> playOrPause());
         btnStop = findViewById(R.id.ibStop);
-        btnStop.setOnClickListener(v -> stop());
 
         ImageButton btnInstagram = findViewById(R.id.ibInstagram);
         btnInstagram.setOnClickListener(v -> openFromUrl("https://www.instagram.com/radiotorrigliasound/"));
@@ -45,8 +46,8 @@ public class PlayerActivity extends AppCompatActivity {
         ImageButton btnRts = findViewById(R.id.ibRTS);
         btnRts.setOnClickListener(v -> openFromUrl("https://www.radiotorrigliasound.it/contatti"));
 
-        tvWait = findViewById(R.id.tvWait);
-
+        pbWait = findViewById(R.id.pbWait);
+        tvWelcome = findViewById(R.id.tvWelcome);
     }
 
     @Override
@@ -69,7 +70,8 @@ public class PlayerActivity extends AppCompatActivity {
             if (PlayerService.ServiceStateMsg.equals(intent.getAction()))
                 updateButtons();
             else if (PlayerService.MediaReadyMsg.equals(intent.getAction())) {
-                tvWait.setVisibility(View.INVISIBLE);
+                pbWait.setVisibility(View.INVISIBLE);
+                tvWelcome.setVisibility(View.INVISIBLE);
                 updateButtons();
             } else if (intent.getAction().equals(PlayerService.PauseStateMsg)) {
                 updateButtons();
@@ -94,7 +96,8 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void startRadioService() {
-        tvWait.setVisibility(View.VISIBLE);
+        pbWait.setVisibility(View.VISIBLE);
+        tvWelcome.setVisibility(View.VISIBLE);
         btnPlay.setEnabled(false);
         btnPause.setEnabled(false);
         btnStop.setEnabled(false);
@@ -137,5 +140,21 @@ public class PlayerActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+    }
+
+    public void goToDeveloper(View view) {
+        openFromUrl("https://fuoridalsolco.com");
+    }
+
+    public void playClicked(View view) {
+        playOrPause();
+    }
+
+    public void pauseClicked(View view) {
+        playOrPause();
+    }
+
+    public void stopClicked(View view) {
+        stop();
     }
 }

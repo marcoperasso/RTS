@@ -8,7 +8,7 @@
     <string name="follow_us_on_instagram">Seguici su Instagram</string>
     <string name="follow_us_on_facebook">Seguici su Facebook</string>
     <string name="follow_us_on_youtube">Seguici su YouTube</string>
-    <string name="buffering">Buffering…</string>
+    <string name="welcome">Benvenuti su Radio Torriglia Sound</string>
     <string name="stop_button">Bottone di arresto</string>
     <string name="stop">Arresta</string>
     <string name="resume">Riprendi</string>
@@ -20,4 +20,5 @@
     <string name="media_player_error">Errore del media player</string>
     <string name="internet_not_available">Internet non disponibile</string>
     <string name="contact_us">Contattaci</string>
+    <string name="producer">App creata da Marco Perasso</string>
 </resources>

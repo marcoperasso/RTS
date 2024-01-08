@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -12,13 +12,16 @@
         android:id="@+id/ivLogo"
         android:layout_width="match_parent"
         android:layout_height="400dp"
+        android:layout_alignParentTop="true"
         android:background="@android:color/transparent"
         android:contentDescription="@string/logo_descri"
         android:src="@drawable/logo" />
 
     <LinearLayout
+        android:id="@+id/logoContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/ivLogo"
         android:gravity="center"
         android:orientation="horizontal">
 
@@ -62,17 +65,26 @@
             android:src="@drawable/mail" />
     </LinearLayout>
 
+    <ProgressBar
+        android:layout_marginTop="10dp"
+        android:layout_below="@id/logoContainer"
+        android:id="@+id/pbWait"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:indeterminate="true" />
     <TextView
-        android:id="@+id/tvWait"
+        android:layout_below="@id/pbWait"
+        android:id="@+id/tvWelcome"
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:gravity="center"
-        android:text="@string/buffering"
+        android:text="@string/welcome"
         android:textAlignment="center"
-        android:textSize="30sp"
-        android:visibility="invisible" />
+        android:textSize="20sp"/>
 
     <LinearLayout
+        android:id="@+id/playContainer"
+        android:layout_below="@id/tvWelcome"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
@@ -87,6 +99,7 @@
             android:contentDescription="@string/stop_button"
             android:scaleType="fitXY"
             android:src="@drawable/stop"
+            android:onClick="stopClicked"
             android:visibility="gone" />
 
         <ImageButton
@@ -97,6 +110,7 @@
             android:background="@android:color/transparent"
             android:contentDescription="@string/play_button"
             android:scaleType="fitXY"
+            android:onClick="playClicked"
             android:src="@drawable/play" />
         <ImageButton
             android:id="@+id/ibPause"
@@ -106,6 +120,18 @@
             android:background="@android:color/transparent"
             android:contentDescription="@string/pause_button"
             android:scaleType="fitXY"
+            android:onClick="pauseClicked"
             android:src="@drawable/pause" />
     </LinearLayout>
-</LinearLayout>
+    <TextView
+        android:id="@+id/tvCredits"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:gravity="center"
+        android:text="@string/producer"
+        android:textAlignment="center"
+        android:textSize="15sp"
+        android:onClick="goToDeveloper"
+        android:layout_marginBottom="20dp"/>
+</RelativeLayout>

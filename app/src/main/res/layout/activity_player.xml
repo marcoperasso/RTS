@@ -71,7 +71,8 @@
         android:id="@+id/pbWait"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:indeterminate="true" />
+        android:indeterminate="true"
+        android:visibility="invisible"/>
     <TextView
         android:layout_below="@id/pbWait"
         android:id="@+id/tvWelcome"
@@ -80,7 +81,8 @@
         android:gravity="center"
         android:text="@string/welcome"
         android:textAlignment="center"
-        android:textSize="20sp"/>
+        android:textSize="20sp"
+        android:visibility="invisible"/>
 
     <LinearLayout
         android:id="@+id/playContainer"

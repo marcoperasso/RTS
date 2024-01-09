@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
@@ -48,6 +49,11 @@ public class PlayerActivity extends AppCompatActivity {
 
         pbWait = findViewById(R.id.pbWait);
         tvWelcome = findViewById(R.id.tvWelcome);
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        int height = displayMetrics.heightPixels;
+        findViewById(R.id.ivLogo).getLayoutParams().height = (int) ( height * .4);
+
     }
 
     @Override
@@ -70,8 +76,7 @@ public class PlayerActivity extends AppCompatActivity {
             if (PlayerService.ServiceStateMsg.equals(intent.getAction()))
                 updateButtons();
             else if (PlayerService.MediaReadyMsg.equals(intent.getAction())) {
-                pbWait.setVisibility(View.INVISIBLE);
-                tvWelcome.setVisibility(View.INVISIBLE);
+                showWaitMode(false);
                 updateButtons();
             } else if (intent.getAction().equals(PlayerService.PauseStateMsg)) {
                 updateButtons();
@@ -96,13 +101,20 @@ public class PlayerActivity extends AppCompatActivity {
     }
 
     private void startRadioService() {
-        pbWait.setVisibility(View.VISIBLE);
-        tvWelcome.setVisibility(View.VISIBLE);
+        showWaitMode(true);
         btnPlay.setEnabled(false);
         btnPause.setEnabled(false);
         btnStop.setEnabled(false);
 
         startForegroundService(new Intent(this, PlayerService.class));
+    }
+
+    private void showWaitMode(boolean show) {
+        int view = show ? View.VISIBLE : View.INVISIBLE;
+        pbWait.setVisibility(view);
+        tvWelcome.setVisibility(view);
+        findViewById(R.id.playContainer).setVisibility(show ? View.INVISIBLE : View.VISIBLE);
+
     }
 
     private void stop() {

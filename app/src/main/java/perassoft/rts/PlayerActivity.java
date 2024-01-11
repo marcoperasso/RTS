@@ -52,14 +52,16 @@ public class PlayerActivity extends AppCompatActivity {
         DisplayMetrics displayMetrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         int height = displayMetrics.heightPixels;
-        findViewById(R.id.ivLogo).getLayoutParams().height = (int) ( height * .4);
+        findViewById(R.id.ivLogo).getLayoutParams().height = (int) (height * .4);
 
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (!PlayerService.isServiceRunning()) {
+        if (PlayerService.isServiceRunning()) {
+            showWaitMode(false);
+        } else {
             startRadioService();
         }
         IntentFilter filter = new IntentFilter(PlayerService.ServiceStateMsg);

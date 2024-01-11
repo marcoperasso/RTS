@@ -37,6 +37,7 @@ public class PlayerService extends Service implements
     private AudioFocusRequest mFocusRequest;
     private boolean serviceMediaPlayerPreparing = true;
     private NotificationCompat.Builder mBuilder;
+    private PendingIntent pOpen;
     private PendingIntent pStop;
     private PendingIntent pPause;
 
@@ -133,6 +134,10 @@ public class PlayerService extends Service implements
         NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "RTS", NotificationManager.IMPORTANCE_DEFAULT);
         channel.setDescription("RTS channel for foreground service notification");
 
+        Intent open = new Intent(this, PlayerActivity.class);
+        open.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        pOpen = PendingIntent.getActivity(this, 0, open, PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
+
         Intent stop = new Intent(this, PlayerService.class);
         stop.setAction(ACTION_STOP_LISTEN);
         pStop = PendingIntent.getService(this, 0, stop, PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE);
@@ -151,6 +156,7 @@ public class PlayerService extends Service implements
                 .setAutoCancel(false)
                 .setOngoing(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .addAction(R.drawable.ic_open, getString(R.string.open), pOpen)
                 .addAction(R.drawable.ic_stop, getString(R.string.stop), pStop)
                 .addAction(R.drawable.ic_pause, getString(R.string.pause), pPause);
         startForeground(notificationId, mBuilder.build());
@@ -213,6 +219,7 @@ public class PlayerService extends Service implements
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         mBuilder
                 .clearActions()
+                .addAction(R.drawable.ic_open, getString(R.string.open), pOpen)
                 .addAction(R.drawable.ic_stop, getString(R.string.stop), pStop);
         if (mPlayer.isPlaying()) {
             mBuilder

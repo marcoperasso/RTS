@@ -113,7 +113,7 @@ public class PlayerActivity extends AppCompatActivity {
         int view = show ? View.VISIBLE : View.INVISIBLE;
         pbWait.setVisibility(view);
         tvWelcome.setVisibility(view);
-        findViewById(R.id.playContainer).setVisibility(show ? View.INVISIBLE : View.VISIBLE);
+        //findViewById(R.id.playContainer).setVisibility(show ? View.INVISIBLE : View.VISIBLE);
 
     }
 

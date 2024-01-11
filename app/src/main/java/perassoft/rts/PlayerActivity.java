@@ -75,12 +75,10 @@ public class PlayerActivity extends AppCompatActivity {
     private final BroadcastReceiver messageReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (PlayerService.ServiceStateMsg.equals(intent.getAction()))
-                updateButtons();
-            else if (PlayerService.MediaReadyMsg.equals(intent.getAction())) {
-                showWaitMode(false);
-                updateButtons();
-            } else if (intent.getAction().equals(PlayerService.PauseStateMsg)) {
+            String action = intent.getAction();
+            if ((PlayerService.ServiceStateMsg.equals(action) ||
+                    PlayerService.MediaReadyMsg.equals(action) ||
+                    PlayerService.PauseStateMsg.equals(action))) {
                 updateButtons();
             }
         }
@@ -137,6 +135,7 @@ public class PlayerActivity extends AppCompatActivity {
         boolean notPreparing = PlayerService.isNotServiceMediaPlayerPreparing();
         boolean playing = PlayerService.isServicePlaying();
         boolean running = PlayerService.isServiceRunning();
+        showWaitMode(!notPreparing);
         btnPlay.setEnabled(notPreparing);
         btnPlay.setVisibility(playing
                 ? View.GONE

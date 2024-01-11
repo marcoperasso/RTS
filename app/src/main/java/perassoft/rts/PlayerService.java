@@ -30,16 +30,20 @@ public class PlayerService extends Service implements
         MediaPlayer.OnErrorListener {
 
     private static final String CHANNEL_ID = "RADIO_SERVICE_CHANNEL";
+    private static final String NUM_RETRIES = "NUM_RETRIES";
     private static PlayerService serviceRunning = null;
     private static final int notificationId = 1;
     public static final String ACTION_STOP_LISTEN = "action_stop_listen";
     public static final String ACTION_PAUSE_LISTEN = "action_pause_listen";
+    public static final String ACTION_RETRY_LISTEN = "action_retry_listen";
     private AudioFocusRequest mFocusRequest;
     private boolean serviceMediaPlayerPreparing = true;
     private NotificationCompat.Builder mBuilder;
     private PendingIntent pOpen;
     private PendingIntent pStop;
     private PendingIntent pPause;
+    private int numRetries = 0;
+    private boolean errorHandled = false;
 
     private void setServiceRunning(PlayerService svc) {
         synchronized (mRunningLock) {
@@ -94,6 +98,13 @@ public class PlayerService extends Service implements
             stopAndNotify(getString(R.string.internet_not_available));
         } else {
             stopAndNotify(getString(R.string.media_player_error));
+            if (++numRetries <= 3 && !errorHandled) {
+                errorHandled = true;
+                Intent intent = new Intent(this, PlayerService.class);
+                intent.setAction(ACTION_RETRY_LISTEN);
+                intent.putExtra(NUM_RETRIES, numRetries);
+                startService(intent);
+            }
         }
         return true;
     }
@@ -196,20 +207,29 @@ public class PlayerService extends Service implements
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null) {
-            if (ACTION_STOP_LISTEN.equals(intent.getAction())) {
-                stopForeground(true);
-                stopSelf();
-                return START_NOT_STICKY;
-            } else if (ACTION_PAUSE_LISTEN.equals(intent.getAction())) {
-                if (mPlayer.isPlaying()) {
-                    mPlayer.pause();
-                } else {
-                    tryPlay();
-                }
-                updateNotification();
-                sendPauseStateMessage();
+            String action = intent.getAction();
+            if (action!= null) {
+                switch (action) {
+                    case ACTION_STOP_LISTEN:
+                        stopForeground(true);
+                        stopSelf();
+                        return START_NOT_STICKY;
+                    case ACTION_PAUSE_LISTEN:
+                        if (mPlayer != null) {
+                            if (mPlayer.isPlaying()) {
+                                mPlayer.pause();
+                            } else {
+                                tryPlay();
+                            }
+                            updateNotification();
+                            sendPauseStateMessage();
+                        }
 
-                return START_NOT_STICKY;
+                        return START_NOT_STICKY;
+                    case ACTION_RETRY_LISTEN:
+                        numRetries = intent.getIntExtra(NUM_RETRIES, 0);
+                        break;
+                }
             }
         }
         return super.onStartCommand(intent, flags, startId);

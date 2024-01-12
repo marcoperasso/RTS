@@ -332,6 +332,7 @@ public class PlayerService extends Service implements
                 break;
         }
         updateNotification();
+        sendPauseStateMessage();
     }
 
     @Nullable

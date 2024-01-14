@@ -13,10 +13,14 @@ import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.NetworkRequest;
 import android.os.IBinder;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -44,6 +48,9 @@ public class PlayerService extends Service implements
     private PendingIntent pPause;
     private int numRetries = 0;
     private boolean errorHandled = false;
+    private boolean wasPlayingWhenNetworkDown = false;
+    private boolean isPlaying;
+    private ConnectivityManager.NetworkCallback mNetworkCallback;
 
     private void setServiceRunning(PlayerService svc) {
         synchronized (mRunningLock) {
@@ -60,7 +67,7 @@ public class PlayerService extends Service implements
 
     public static boolean isServicePlaying() {
         synchronized (mRunningLock) {
-            return serviceRunning != null && serviceRunning.mPlayer.isPlaying();
+            return serviceRunning != null && serviceRunning.isPlaying;
         }
     }
 
@@ -94,23 +101,26 @@ public class PlayerService extends Service implements
 
     @Override
     public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
-        if (isNetworkDown()) {
-            stopAndNotify(getString(R.string.internet_not_available));
-        } else {
-            stopAndNotify(getString(R.string.media_player_error));
+        if (!isNetworkDown()) {
+            stopServiceAndNotify(getString(R.string.media_player_error));
             if (++numRetries <= 3 && !errorHandled) {
                 errorHandled = true;
-                Intent intent = new Intent(this, PlayerService.class);
-                intent.setAction(ACTION_RETRY_LISTEN);
-                intent.putExtra(NUM_RETRIES, numRetries);
-                startService(intent);
+                restartService();
             }
         }
         return true;
     }
 
-    private void stopAndNotify(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    private void restartService() {
+        Intent intent = new Intent(this, PlayerService.class);
+        intent.setAction(ACTION_RETRY_LISTEN);
+        intent.putExtra(NUM_RETRIES, numRetries);
+        startService(intent);
+    }
+
+    private void stopServiceAndNotify(String message) {
+        if (message != null)
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
         serviceMediaPlayerPreparing = false;
         sendMediaReadyMessage();
         stopForeground(true);
@@ -147,7 +157,7 @@ public class PlayerService extends Service implements
 
         Intent open = new Intent(this, PlayerActivity.class);
         open.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        pOpen = PendingIntent.getActivity(this, 0, open, PendingIntent.FLAG_IMMUTABLE|PendingIntent.FLAG_UPDATE_CURRENT);
+        pOpen = PendingIntent.getActivity(this, 0, open, PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT);
 
         Intent stop = new Intent(this, PlayerService.class);
         stop.setAction(ACTION_STOP_LISTEN);
@@ -173,7 +183,7 @@ public class PlayerService extends Service implements
         startForeground(notificationId, mBuilder.build());
 
         if (isNetworkDown()) {
-            stopAndNotify(getString(R.string.internet_not_available));
+            stopServiceAndNotify(getString(R.string.internet_not_available));
             return;
         }
         mPlaybackAttributes = new AudioAttributes.Builder()
@@ -186,7 +196,7 @@ public class PlayerService extends Service implements
         try {
             mPlayer.setDataSource("https://sr7.inmystream.it/proxy/radiotor?mp=/stream");
         } catch (IOException e) {
-            stopAndNotify(e.getMessage());
+            stopServiceAndNotify(e.getMessage());
             return;
         }
         mPlayer.setAudioAttributes(mPlaybackAttributes);
@@ -200,7 +210,36 @@ public class PlayerService extends Service implements
         registerReceiver(myReceiver, filter);
 
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        NetworkRequest networkRequest = new NetworkRequest.Builder()
+                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .addTransportType(NetworkCapabilities.TRANSPORT_CELLULAR)
+                .build();
+        mNetworkCallback = new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(@NonNull Network network) {
+                super.onAvailable(network);
+                if (wasPlayingWhenNetworkDown) {
+                    stopServiceAndNotify(null);
+                    restartService();
+                }
+            }
 
+            @Override
+            public void onLost(@NonNull Network network) {
+                super.onLost(network);
+                wasPlayingWhenNetworkDown = isPlaying;
+                if (wasPlayingWhenNetworkDown)
+                    pauseRadio();
+            }
+
+            @Override
+            public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities networkCapabilities) {
+                super.onCapabilitiesChanged(network, networkCapabilities);
+            }
+        };
+        ConnectivityManager connectivityManager = getSystemService(ConnectivityManager.class);
+        connectivityManager.requestNetwork(networkRequest, mNetworkCallback);
 
     }
 
@@ -208,7 +247,7 @@ public class PlayerService extends Service implements
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null) {
             String action = intent.getAction();
-            if (action!= null) {
+            if (action != null) {
                 switch (action) {
                     case ACTION_STOP_LISTEN:
                         stopForeground(true);
@@ -216,8 +255,8 @@ public class PlayerService extends Service implements
                         return START_NOT_STICKY;
                     case ACTION_PAUSE_LISTEN:
                         if (mPlayer != null) {
-                            if (mPlayer.isPlaying()) {
-                                mPlayer.pause();
+                            if (isPlaying) {
+                                pausePlayer();
                             } else {
                                 tryPlay();
                             }
@@ -241,7 +280,7 @@ public class PlayerService extends Service implements
                 .clearActions()
                 .addAction(R.drawable.ic_open, getString(R.string.open), pOpen)
                 .addAction(R.drawable.ic_stop, getString(R.string.stop), pStop);
-        if (mPlayer.isPlaying()) {
+        if (isPlaying) {
             mBuilder
                     .setContentTitle(getString(R.string.radio_running))
                     .addAction(R.drawable.ic_pause, getString(R.string.pause), pPause);
@@ -270,15 +309,20 @@ public class PlayerService extends Service implements
     }
 
     private void pauseRadio() {
-        mPlayer.pause();
+        pausePlayer();
         synchronized (mFocusLock) {
             mPlaybackDelayed = false;
             mResumeOnFocusGain = false;
         }
         updateNotification();
+        sendPauseStateMessage();
     }
 
     private void tryPlay() {
+        if (isNetworkDown()) {
+            Toast.makeText(this, R.string.internet_not_available, Toast.LENGTH_SHORT).show();
+            return;
+        }
         mFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAudioAttributes(mPlaybackAttributes)
                 .setAcceptsDelayedFocusGain(true)
@@ -291,13 +335,22 @@ public class PlayerService extends Service implements
                 mPlaybackDelayed = false;
             } else if (res == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                 mPlaybackDelayed = false;
-                mPlayer.start();
+                startPlayer();
             } else if (res == AudioManager.AUDIOFOCUS_REQUEST_DELAYED) {
                 mPlaybackDelayed = true;
             }
         }
     }
 
+    void startPlayer() {
+        mPlayer.start();
+        isPlaying = true;
+    }
+
+    void pausePlayer() {
+        mPlayer.pause();
+        isPlaying = false;
+    }
 
     // implementation of the OnAudioFocusChangeListener
     @Override
@@ -309,7 +362,7 @@ public class PlayerService extends Service implements
                         mPlaybackDelayed = false;
                         mResumeOnFocusGain = false;
                     }
-                    mPlayer.start();
+                    startPlayer();
                 }
                 break;
             case AudioManager.AUDIOFOCUS_LOSS:
@@ -318,21 +371,22 @@ public class PlayerService extends Service implements
                     mResumeOnFocusGain = false;
                     mPlaybackDelayed = false;
                 }
-                mPlayer.pause();
+                pausePlayer();
+                sendPauseStateMessage();
                 break;
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
                 // we handle all transient losses the same way because we never duck audio books
                 synchronized (mFocusLock) {
                     // we should only resume if playback was interrupted
-                    mResumeOnFocusGain = mPlayer.isPlaying();
+                    mResumeOnFocusGain = isPlaying;
                     mPlaybackDelayed = false;
                 }
-                mPlayer.pause();
+                pausePlayer();
+                sendPauseStateMessage();
                 break;
         }
         updateNotification();
-        sendPauseStateMessage();
     }
 
     @Nullable
@@ -345,6 +399,9 @@ public class PlayerService extends Service implements
     public void onDestroy() {
         if (mAudioManager != null && mFocusRequest != null)
             mAudioManager.abandonAudioFocusRequest(mFocusRequest);
+        ConnectivityManager connectivityManager = getSystemService(ConnectivityManager.class);
+        if (mNetworkCallback != null)
+            connectivityManager.unregisterNetworkCallback(mNetworkCallback);
         setServiceRunning(null);
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         notificationManager.cancel(notificationId);

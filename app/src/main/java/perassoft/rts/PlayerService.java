@@ -86,8 +86,6 @@ public class PlayerService extends Service implements
     private MusicIntentReceiver myReceiver;
     private boolean firstTimeForMusicIntentReceiver = true;
     public static String ServiceStateMsg = "service_state";
-    public static String MediaReadyMsg = "media_ready";
-    public static String PauseStateMsg = "pause_state";
     private AudioAttributes mPlaybackAttributes;
     private MediaPlayer mPlayer;
 
@@ -96,7 +94,7 @@ public class PlayerService extends Service implements
         tryPlay();
 
         serviceMediaPlayerPreparing = false;
-        sendMediaReadyMessage();
+        sendServiceStateMessage();
     }
 
     @Override
@@ -122,7 +120,7 @@ public class PlayerService extends Service implements
         if (message != null)
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
         serviceMediaPlayerPreparing = false;
-        sendMediaReadyMessage();
+        sendServiceStateMessage();
         stopForeground(true);
         stopSelf();
     }
@@ -261,7 +259,7 @@ public class PlayerService extends Service implements
                                 tryPlay();
                             }
                             updateNotification();
-                            sendPauseStateMessage();
+                            sendServiceStateMessage();
                         }
 
                         return START_NOT_STICKY;
@@ -298,16 +296,6 @@ public class PlayerService extends Service implements
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
-    private void sendMediaReadyMessage() {
-        Intent intent = new Intent(MediaReadyMsg);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-    }
-
-    private void sendPauseStateMessage() {
-        Intent intent = new Intent(PauseStateMsg);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-    }
-
     private void pauseRadio() {
         pausePlayer();
         synchronized (mFocusLock) {
@@ -315,7 +303,7 @@ public class PlayerService extends Service implements
             mResumeOnFocusGain = false;
         }
         updateNotification();
-        sendPauseStateMessage();
+        sendServiceStateMessage();
     }
 
     private void tryPlay() {
@@ -372,7 +360,7 @@ public class PlayerService extends Service implements
                     mPlaybackDelayed = false;
                 }
                 pausePlayer();
-                sendPauseStateMessage();
+                sendServiceStateMessage();
                 break;
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT:
             case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
@@ -383,7 +371,7 @@ public class PlayerService extends Service implements
                     mPlaybackDelayed = false;
                 }
                 pausePlayer();
-                sendPauseStateMessage();
+                sendServiceStateMessage();
                 break;
         }
         updateNotification();

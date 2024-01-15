@@ -65,8 +65,6 @@ public class PlayerActivity extends AppCompatActivity {
             startRadioService();
         }
         IntentFilter filter = new IntentFilter(PlayerService.ServiceStateMsg);
-        filter.addAction(PlayerService.MediaReadyMsg);
-        filter.addAction(PlayerService.PauseStateMsg);
         LocalBroadcastManager.getInstance(this).registerReceiver(messageReceiver, filter);
         updateButtons();
     }
@@ -76,9 +74,7 @@ public class PlayerActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
-            if ((PlayerService.ServiceStateMsg.equals(action) ||
-                    PlayerService.MediaReadyMsg.equals(action) ||
-                    PlayerService.PauseStateMsg.equals(action))) {
+            if ((PlayerService.ServiceStateMsg.equals(action))) {
                 updateButtons();
             }
         }

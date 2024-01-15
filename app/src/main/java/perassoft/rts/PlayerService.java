@@ -33,6 +33,7 @@ public class PlayerService extends Service implements
 
     private static final String CHANNEL_ID = "RADIO_SERVICE_CHANNEL";
     private static final String NUM_RETRIES = "NUM_RETRIES";
+    private static final long NETWORK_TIMEOUT = 15 * 60000;//15 minuti
     private static PlayerService serviceRunning = null;
     private static final int notificationId = 1;
     public static final String ACTION_STOP_LISTEN = "action_stop_listen";
@@ -242,8 +243,7 @@ public class PlayerService extends Service implements
                 }
                 wasPlayingWhenNetworkDown = isPlaying;
                 if (wasPlayingWhenNetworkDown) {
-                    int timeout = 30000;
-                    timer = new CountDownTimer(timeout, timeout) {
+                    timer = new CountDownTimer(NETWORK_TIMEOUT, NETWORK_TIMEOUT) {
 
                         public void onTick(long millisUntilFinished) {
 

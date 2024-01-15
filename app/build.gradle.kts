@@ -11,7 +11,7 @@ android {
         applicationId = "perassoft.rts"
         minSdk = 27
         targetSdk = 33
-        versionCode = 11
+        versionCode = 12
         versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

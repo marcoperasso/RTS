@@ -17,15 +17,13 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkRequest;
+import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
-
-
 import java.io.IOException;
 
 public class PlayerService extends Service implements
@@ -51,6 +49,8 @@ public class PlayerService extends Service implements
     private boolean wasPlayingWhenNetworkDown = false;
     private boolean isPlaying;
     private ConnectivityManager.NetworkCallback mNetworkCallback;
+    private boolean networkLost;
+    private CountDownTimer timer;
 
     private void setServiceRunning(PlayerService svc) {
         synchronized (mRunningLock) {
@@ -99,13 +99,20 @@ public class PlayerService extends Service implements
 
     @Override
     public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
-        if (!isNetworkDown()) {
+        if (isNetworkDown()) {
+            if (serviceMediaPlayerPreparing)
+            {
+                stopServiceAndNotify(getString(R.string.internet_not_available));
+            }
+        }
+        else{
             stopServiceAndNotify(getString(R.string.media_player_error));
             if (++numRetries <= 3 && !errorHandled) {
                 errorHandled = true;
                 restartService();
             }
         }
+
         return true;
     }
 
@@ -218,17 +225,37 @@ public class PlayerService extends Service implements
             public void onAvailable(@NonNull Network network) {
                 super.onAvailable(network);
                 if (wasPlayingWhenNetworkDown) {
-                    stopServiceAndNotify(null);
+                    stopServiceAndNotify(getString(R.string.network_change_detected_restarting_service));
                     restartService();
                 }
+                if (timer != null)
+                    timer.cancel();
             }
 
             @Override
             public void onLost(@NonNull Network network) {
                 super.onLost(network);
+                if (serviceMediaPlayerPreparing)
+                {
+                    stopServiceAndNotify(getString(R.string.internet_not_available));
+                    return;
+                }
                 wasPlayingWhenNetworkDown = isPlaying;
-                if (wasPlayingWhenNetworkDown)
+                if (wasPlayingWhenNetworkDown) {
+                    int timeout = 30000;
+                    timer = new CountDownTimer(timeout, timeout) {
+
+                        public void onTick(long millisUntilFinished) {
+
+                        }
+
+                        public void onFinish() {
+                            stopServiceAndNotify(getString(R.string.internet_not_available));
+                        }
+                    }.start();
                     pauseRadio();
+                }
+                networkLost = true;
             }
 
             @Override
@@ -311,6 +338,13 @@ public class PlayerService extends Service implements
             Toast.makeText(this, R.string.internet_not_available, Toast.LENGTH_SHORT).show();
             return;
         }
+        //rete cambiata: riavvio il servizio altrimenti il media player va in errore e avverrebbe comunque
+        if (networkLost)
+        {
+            stopServiceAndNotify(getString(R.string.network_change_detected_restarting_service));
+            restartService();
+            return;
+        }
         mFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAudioAttributes(mPlaybackAttributes)
                 .setAcceptsDelayedFocusGain(true)
@@ -390,6 +424,8 @@ public class PlayerService extends Service implements
         ConnectivityManager connectivityManager = getSystemService(ConnectivityManager.class);
         if (mNetworkCallback != null)
             connectivityManager.unregisterNetworkCallback(mNetworkCallback);
+        if (timer != null)
+            timer.cancel();
         setServiceRunning(null);
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         notificationManager.cancel(notificationId);

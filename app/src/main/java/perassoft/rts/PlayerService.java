@@ -5,6 +5,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -17,13 +18,16 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkRequest;
+import android.os.Build;
 import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import java.io.IOException;
 
 public class PlayerService extends Service implements
@@ -52,6 +56,7 @@ public class PlayerService extends Service implements
     private ConnectivityManager.NetworkCallback mNetworkCallback;
     private boolean networkLost;
     private CountDownTimer timer;
+    private PendingIntent mMediaButtonPendingIntent;
 
     private void setServiceRunning(PlayerService svc) {
         synchronized (mRunningLock) {
@@ -101,12 +106,10 @@ public class PlayerService extends Service implements
     @Override
     public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
         if (isNetworkDown()) {
-            if (serviceMediaPlayerPreparing)
-            {
+            if (serviceMediaPlayerPreparing) {
                 stopServiceAndNotify(getString(R.string.internet_not_available));
             }
-        }
-        else{
+        } else {
             stopServiceAndNotify(getString(R.string.media_player_error));
             if (++numRetries <= 3 && !errorHandled) {
                 errorHandled = true;
@@ -184,8 +187,8 @@ public class PlayerService extends Service implements
                 .setOngoing(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .addAction(R.drawable.ic_open, getString(R.string.open), pOpen)
-                .addAction(R.drawable.ic_stop, getString(R.string.stop), pStop)
-                .addAction(R.drawable.ic_pause, getString(R.string.pause), pPause);
+                .addAction(R.drawable.ic_pause, getString(R.string.pause), pPause)
+                .addAction(R.drawable.ic_stop, getString(R.string.stop), pStop);
         startForeground(notificationId, mBuilder.build());
 
         if (isNetworkDown()) {
@@ -216,6 +219,17 @@ public class PlayerService extends Service implements
         registerReceiver(myReceiver, filter);
 
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
+        Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
+        mediaButtonIntent.setClass(this, HeadSetIntentReceiver.class);
+        int flags = 0;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            flags = PendingIntent.FLAG_MUTABLE;
+        }
+
+        mMediaButtonPendingIntent = PendingIntent.getBroadcast(this, 0, mediaButtonIntent, flags);
+        mAudioManager.registerMediaButtonEventReceiver(mMediaButtonPendingIntent);
+
         NetworkRequest networkRequest = new NetworkRequest.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
@@ -236,8 +250,7 @@ public class PlayerService extends Service implements
             @Override
             public void onLost(@NonNull Network network) {
                 super.onLost(network);
-                if (serviceMediaPlayerPreparing)
-                {
+                if (serviceMediaPlayerPreparing) {
                     stopServiceAndNotify(getString(R.string.internet_not_available));
                     return;
                 }
@@ -303,8 +316,7 @@ public class PlayerService extends Service implements
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         mBuilder
                 .clearActions()
-                .addAction(R.drawable.ic_open, getString(R.string.open), pOpen)
-                .addAction(R.drawable.ic_stop, getString(R.string.stop), pStop);
+                .addAction(R.drawable.ic_open, getString(R.string.open), pOpen);
         if (isPlaying) {
             mBuilder
                     .setContentTitle(getString(R.string.radio_running))
@@ -315,6 +327,7 @@ public class PlayerService extends Service implements
                     .setContentTitle(getString(R.string.radio_paused))
                     .addAction(R.drawable.ic_pause, getString(R.string.resume), pPause);
         }
+        mBuilder.addAction(R.drawable.ic_stop, getString(R.string.stop), pStop);
         notificationManager.notify(notificationId, mBuilder.build());
     }
 
@@ -339,8 +352,7 @@ public class PlayerService extends Service implements
             return;
         }
         //rete cambiata: riavvio il servizio altrimenti il media player va in errore e avverrebbe comunque
-        if (networkLost)
-        {
+        if (networkLost) {
             stopServiceAndNotify(getString(R.string.network_change_detected_restarting_service));
             restartService();
             return;
@@ -419,8 +431,13 @@ public class PlayerService extends Service implements
 
     @Override
     public void onDestroy() {
-        if (mAudioManager != null && mFocusRequest != null)
-            mAudioManager.abandonAudioFocusRequest(mFocusRequest);
+        if (mAudioManager != null) {
+            if (mFocusRequest != null)
+                mAudioManager.abandonAudioFocusRequest(mFocusRequest);
+            if (mMediaButtonPendingIntent != null)
+                mAudioManager.unregisterMediaButtonEventReceiver(mMediaButtonPendingIntent);
+        }
+
         ConnectivityManager connectivityManager = getSystemService(ConnectivityManager.class);
         if (mNetworkCallback != null)
             connectivityManager.unregisterNetworkCallback(mNetworkCallback);

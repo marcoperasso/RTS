@@ -4,8 +4,6 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -18,7 +16,6 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkRequest;
-import android.os.Build;
 import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.widget.Toast;
@@ -26,6 +23,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import java.io.IOException;
@@ -56,7 +54,6 @@ public class PlayerService extends Service implements
     private ConnectivityManager.NetworkCallback mNetworkCallback;
     private boolean networkLost;
     private CountDownTimer timer;
-    private PendingIntent mMediaButtonPendingIntent;
 
     private void setServiceRunning(PlayerService svc) {
         synchronized (mRunningLock) {
@@ -89,8 +86,7 @@ public class PlayerService extends Service implements
     private final static Object mRunningLock = new Object();
     private AudioManager mAudioManager;
 
-    private MusicIntentReceiver myReceiver;
-    private boolean firstTimeForMusicIntentReceiver = true;
+    private HeadSetIntentReceiver headSetReceiver;
     public static String ServiceStateMsg = "service_state";
     private AudioAttributes mPlaybackAttributes;
     private MediaPlayer mPlayer;
@@ -134,20 +130,6 @@ public class PlayerService extends Service implements
         sendServiceStateMessage();
         stopForeground(true);
         stopSelf();
-    }
-
-    private class MusicIntentReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            //all'avvio viene ricevuto il messaggio anche senza che le cuffie siano state toccate
-            if (firstTimeForMusicIntentReceiver) {
-                firstTimeForMusicIntentReceiver = false;
-                return;
-            }
-            int state = intent.getIntExtra("state", -1);
-            if (state == 0)
-                pauseRadio();
-        }
     }
 
     private boolean isNetworkDown() {
@@ -214,21 +196,12 @@ public class PlayerService extends Service implements
         mPlayer.prepareAsync();
         setServiceRunning(this);
 
-        myReceiver = new MusicIntentReceiver();
+        headSetReceiver = new HeadSetIntentReceiver();
         IntentFilter filter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
-        registerReceiver(myReceiver, filter);
+        filter.addAction(Intent.ACTION_MEDIA_BUTTON);
+        ContextCompat.registerReceiver(this, headSetReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
 
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-
-        Intent mediaButtonIntent = new Intent(Intent.ACTION_MEDIA_BUTTON);
-        mediaButtonIntent.setClass(this, HeadSetIntentReceiver.class);
-        int flags = 0;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            flags = PendingIntent.FLAG_MUTABLE;
-        }
-
-        mMediaButtonPendingIntent = PendingIntent.getBroadcast(this, 0, mediaButtonIntent, flags);
-        mAudioManager.registerMediaButtonEventReceiver(mMediaButtonPendingIntent);
 
         NetworkRequest networkRequest = new NetworkRequest.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
@@ -434,8 +407,6 @@ public class PlayerService extends Service implements
         if (mAudioManager != null) {
             if (mFocusRequest != null)
                 mAudioManager.abandonAudioFocusRequest(mFocusRequest);
-            if (mMediaButtonPendingIntent != null)
-                mAudioManager.unregisterMediaButtonEventReceiver(mMediaButtonPendingIntent);
         }
 
         ConnectivityManager connectivityManager = getSystemService(ConnectivityManager.class);
@@ -448,8 +419,8 @@ public class PlayerService extends Service implements
         notificationManager.cancel(notificationId);
         if (mPlayer != null)
             mPlayer.release();
-        if (myReceiver != null)
-            unregisterReceiver(myReceiver);
+        if (headSetReceiver != null)
+            unregisterReceiver(headSetReceiver);
         super.onDestroy();
     }
 }

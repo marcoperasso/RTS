@@ -54,6 +54,7 @@ public class PlayerService extends Service implements
     private ConnectivityManager.NetworkCallback mNetworkCallback;
     private boolean networkLost;
     private CountDownTimer timer;
+    private HeadSetIntentReceiver headsetReceiver;
 
     private void setServiceRunning(PlayerService svc) {
         synchronized (mRunningLock) {
@@ -216,6 +217,10 @@ public class PlayerService extends Service implements
         registerReceiver(headsetPlugStateReceiver, filter, RECEIVER_EXPORTED);
 
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
+        filter = new IntentFilter(Intent.ACTION_MEDIA_BUTTON);
+        headsetReceiver = new HeadSetIntentReceiver();
+        registerReceiver(headsetReceiver, filter, RECEIVER_EXPORTED);
 
         NetworkRequest networkRequest = new NetworkRequest.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
@@ -435,6 +440,8 @@ public class PlayerService extends Service implements
             mPlayer.release();
         if (headsetPlugStateReceiver != null)
             unregisterReceiver(headsetPlugStateReceiver);
+        if (headsetReceiver != null)
+            unregisterReceiver(headsetReceiver);
         super.onDestroy();
     }
 }

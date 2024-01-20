@@ -11,6 +11,7 @@ import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.media.session.MediaSession;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -18,6 +19,7 @@ import android.net.NetworkInfo;
 import android.net.NetworkRequest;
 import android.os.CountDownTimer;
 import android.os.IBinder;
+import android.view.KeyEvent;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -54,6 +56,7 @@ public class PlayerService extends Service implements
     private ConnectivityManager.NetworkCallback mNetworkCallback;
     private boolean networkLost;
     private CountDownTimer timer;
+    private MediaSession mediaSession;
 
     private void setServiceRunning(PlayerService svc) {
         synchronized (mRunningLock) {
@@ -198,11 +201,31 @@ public class PlayerService extends Service implements
 
         headSetReceiver = new HeadSetIntentReceiver();
         IntentFilter filter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
-        filter.addAction(Intent.ACTION_MEDIA_BUTTON);
         ContextCompat.registerReceiver(this, headSetReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
 
-        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        MediaSession.Callback callback = new MediaSession.Callback() {
+            @Override
+            public boolean onMediaButtonEvent(@NonNull Intent intent) {
+                String action = intent.getAction();
+                if (action != null) {
+                    if (action.equals(Intent.ACTION_MEDIA_BUTTON)) {
+                        if (PlayerService.isServiceRunning()) {
+                            KeyEvent ke = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
+                            if (ke != null && ke.getAction() == KeyEvent.ACTION_DOWN) {
+                                togglePlayPause();
+                            }
+                        }
+                    }
+                }
 
+                return super.onMediaButtonEvent(intent);
+            }
+        };
+        mediaSession = new MediaSession(this, "PlayerService"); // Debugging tag, any string
+        mediaSession.setCallback(callback);
+
+        mediaSession.setActive(true);
+        mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         NetworkRequest networkRequest = new NetworkRequest.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
@@ -265,15 +288,7 @@ public class PlayerService extends Service implements
                         stopSelf();
                         return START_NOT_STICKY;
                     case ACTION_PAUSE_LISTEN:
-                        if (mPlayer != null) {
-                            if (isPlaying) {
-                                pausePlayer();
-                            } else {
-                                tryPlay();
-                            }
-                            updateNotification();
-                            sendServiceStateMessage();
-                        }
+                        togglePlayPause();
 
                         return START_NOT_STICKY;
                     case ACTION_RETRY_LISTEN:
@@ -283,6 +298,18 @@ public class PlayerService extends Service implements
             }
         }
         return super.onStartCommand(intent, flags, startId);
+    }
+
+    private void togglePlayPause() {
+        if (mPlayer != null) {
+            if (isPlaying) {
+                pausePlayer();
+            } else {
+                tryPlay();
+            }
+            updateNotification();
+            sendServiceStateMessage();
+        }
     }
 
     private void updateNotification() {
@@ -414,6 +441,8 @@ public class PlayerService extends Service implements
             connectivityManager.unregisterNetworkCallback(mNetworkCallback);
         if (timer != null)
             timer.cancel();
+        if (mediaSession!= null)
+            mediaSession.release();
         setServiceRunning(null);
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
         notificationManager.cancel(notificationId);

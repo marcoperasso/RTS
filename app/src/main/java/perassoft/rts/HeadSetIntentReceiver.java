@@ -3,7 +3,6 @@ package perassoft.rts;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.view.KeyEvent;
 
 public class HeadSetIntentReceiver extends BroadcastReceiver {
     private boolean firstTimeForMusicIntentReceiver = true;
@@ -15,14 +14,7 @@ public class HeadSetIntentReceiver extends BroadcastReceiver {
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
         if (action != null) {
-            if (action.equals(Intent.ACTION_MEDIA_BUTTON)) {
-                if (PlayerService.isServiceRunning()) {
-                    KeyEvent ke = intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
-                    if (ke != null && ke.getAction() == KeyEvent.ACTION_DOWN) {
-                        playOrPause(context);
-                    }
-                }
-            } else if (action.equals(Intent.ACTION_HEADSET_PLUG)) {
+           if (action.equals(Intent.ACTION_HEADSET_PLUG)) {
                 if (firstTimeForMusicIntentReceiver) {
                     firstTimeForMusicIntentReceiver = false;
                     return;

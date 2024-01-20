@@ -38,13 +38,5 @@
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
-        <receiver android:name=".HeadSetIntentReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.ACTION_HEADSET_PLUG"/>
-                <action android:name="android.intent.action.MEDIA_BUTTON"/>
-            </intent-filter>
-        </receiver>
     </application>
 </manifest>

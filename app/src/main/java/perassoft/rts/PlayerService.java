@@ -4,6 +4,8 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -201,6 +203,9 @@ public class PlayerService extends Service implements
 
         headSetReceiver = new HeadSetIntentReceiver();
         IntentFilter filter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
+        filter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);      // catches bluetooth ON/OFF (the major case)
+        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+
         ContextCompat.registerReceiver(this, headSetReceiver, filter, ContextCompat.RECEIVER_EXPORTED);
 
         MediaSession.Callback callback = new MediaSession.Callback() {

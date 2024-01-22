@@ -20,7 +20,7 @@
     <string name="media_player_error">Errore del media player</string>
     <string name="internet_not_available">Internet non disponibile</string>
     <string name="contact_us">Contattaci</string>
-    <string name="producer">App creata da Marco Perasso</string>
+    <string name="producer">Vai al sito dello sviluppatore</string>
     <string name="open">Apri</string>
     <string name="network_change_detected_restarting_service">Rilevato cambio di rete: riavvio del servizio in corso</string>
     <string name="connecting">Connessione in corso…</string>

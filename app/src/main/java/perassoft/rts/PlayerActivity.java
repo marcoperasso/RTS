@@ -13,6 +13,9 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.URLSpan;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.widget.ImageButton;
@@ -55,7 +58,11 @@ public class PlayerActivity extends AppCompatActivity {
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         int height = displayMetrics.heightPixels;
         findViewById(R.id.ivLogo).getLayoutParams().height = (int) (height * .4);
-
+        TextView tv = findViewById(R.id.tvCredits);
+        final CharSequence text = tv.getText();
+        final SpannableString spannableString = new SpannableString( text );
+        spannableString.setSpan(new URLSpan(""), 0, spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        tv.setText(spannableString, TextView.BufferType.SPANNABLE);
     }
 
     @Override

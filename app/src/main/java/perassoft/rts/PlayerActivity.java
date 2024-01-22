@@ -9,6 +9,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -95,14 +97,28 @@ public class PlayerActivity extends AppCompatActivity {
             startRadioService();
         }
     }
-
+    public boolean isNetworkDown() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager != null ? connectivityManager.getActiveNetworkInfo() : null;
+        return activeNetworkInfo == null || !activeNetworkInfo.isConnectedOrConnecting();
+    }
     private void startRadioService() {
+        if (noNetwork()) return;
         showWaitMode(true);
         btnPlay.setEnabled(false);
         btnPause.setEnabled(false);
         btnStop.setEnabled(false);
 
         startForegroundService(new Intent(this, PlayerService.class));
+    }
+
+    private boolean noNetwork() {
+        if (isNetworkDown()) {
+            Toast.makeText(this, getString(R.string.internet_not_available), Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        return false;
     }
 
     private void showWaitMode(boolean show) {

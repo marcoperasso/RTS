@@ -20,6 +20,7 @@ import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.NetworkRequest;
 import android.os.CountDownTimer;
+import android.os.Handler;
 import android.os.IBinder;
 import android.view.KeyEvent;
 import android.widget.Toast;
@@ -53,12 +54,13 @@ public class PlayerService extends Service implements
     private PendingIntent pPause;
     private int numRetries = 0;
     private boolean errorHandled = false;
-    private boolean wasPlayingWhenNetworkDown = false;
+    private boolean playWhenNetworkAvailable = false;
     private boolean isPlaying;
     private ConnectivityManager.NetworkCallback mNetworkCallback;
     private boolean networkLost;
     private CountDownTimer timer;
     private MediaSession mediaSession;
+    private Handler mainHandler;
 
     private void setServiceRunning(PlayerService svc) {
         synchronized (mRunningLock) {
@@ -107,9 +109,15 @@ public class PlayerService extends Service implements
     @Override
     public boolean onError(MediaPlayer mediaPlayer, int i, int i1) {
         if (isNetworkDown()) {
-            if (serviceMediaPlayerPreparing) {
-                stopServiceAndNotify(getString(R.string.internet_not_available));
+            if (mPlayer != null) {
+                mPlayer.release();
+                mPlayer = null;
             }
+            playWhenNetworkAvailable = serviceMediaPlayerPreparing || isPlaying;
+            serviceMediaPlayerPreparing = false;
+            isPlaying = false;
+            sendServiceStateMessage();
+            errorHandled = true;
         } else {
             stopServiceAndNotify(getString(R.string.media_player_error));
             if (++numRetries <= 3 && !errorHandled) {
@@ -147,6 +155,7 @@ public class PlayerService extends Service implements
     @Override
     public void onCreate() {
         super.onCreate();
+        mainHandler = new Handler(getMainLooper());
 
         NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "RTS", NotificationManager.IMPORTANCE_DEFAULT);
         channel.setDescription("RTS channel for foreground service notification");
@@ -178,10 +187,6 @@ public class PlayerService extends Service implements
                 .addAction(R.drawable.ic_stop, getString(R.string.stop), pStop);
         startForeground(notificationId, mBuilder.build());
 
-        if (isNetworkDown()) {
-            stopServiceAndNotify(getString(R.string.internet_not_available));
-            return;
-        }
         mPlaybackAttributes = new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_MEDIA)
                 .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
@@ -231,6 +236,11 @@ public class PlayerService extends Service implements
 
         mediaSession.setActive(true);
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+
+        addNetworkListener();
+    }
+
+    private void addNetworkListener() {
         NetworkRequest networkRequest = new NetworkRequest.Builder()
                 .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
                 .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
@@ -240,69 +250,91 @@ public class PlayerService extends Service implements
             @Override
             public void onAvailable(@NonNull Network network) {
                 super.onAvailable(network);
-                if (wasPlayingWhenNetworkDown) {
-                    stopServiceAndNotify(getString(R.string.network_change_detected_restarting_service));
-                    restartService();
-                }
-                if (timer != null)
-                    timer.cancel();
+                mainHandler.post(() -> {
+                    if (playWhenNetworkAvailable) {
+                        stopServiceAndNotify(getString(R.string.network_change_detected_restarting_service));
+                        restartService();
+                    }
+                    if (timer != null)
+                        timer.cancel();
+                });
             }
 
             @Override
             public void onLost(@NonNull Network network) {
                 super.onLost(network);
-                if (serviceMediaPlayerPreparing) {
-                    stopServiceAndNotify(getString(R.string.internet_not_available));
-                    return;
-                }
-                wasPlayingWhenNetworkDown = isPlaying;
-                if (wasPlayingWhenNetworkDown) {
-                    timer = new CountDownTimer(NETWORK_TIMEOUT, NETWORK_TIMEOUT) {
+                mainHandler.post(() -> {
+                    if (serviceMediaPlayerPreparing) {
+                        playWhenNetworkAvailable = true;
+                        serviceMediaPlayerPreparing = false;
+                        mPlayer.release();
+                        mPlayer = null;
 
-                        public void onTick(long millisUntilFinished) {
+                    } else
+                        playWhenNetworkAvailable = isPlaying;
 
-                        }
+                    if (playWhenNetworkAvailable) {
+                        timer = new CountDownTimer(NETWORK_TIMEOUT, NETWORK_TIMEOUT) {
+                            public void onTick(long millisUntilFinished) {
+                            }
 
-                        public void onFinish() {
-                            stopServiceAndNotify(getString(R.string.internet_not_available));
-                        }
-                    }.start();
-                    pauseRadio();
-                }
-                networkLost = true;
+                            public void onFinish() {
+                                stopServiceAndNotify(getString(R.string.internet_not_available));
+                            }
+                        }.start();
+                    }
+                    if (isPlaying)
+                        pauseRadio();
+                    networkLost = true;
+                    sendServiceStateMessage();
+                });
             }
 
             @Override
-            public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities networkCapabilities) {
+            public void onCapabilitiesChanged(@NonNull Network network, @NonNull NetworkCapabilities
+                    networkCapabilities) {
                 super.onCapabilitiesChanged(network, networkCapabilities);
             }
-        };
+        }
+
+        ;
         ConnectivityManager connectivityManager = getSystemService(ConnectivityManager.class);
         connectivityManager.requestNetwork(networkRequest, mNetworkCallback);
-
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null) {
-            String action = intent.getAction();
-            if (action != null) {
-                switch (action) {
-                    case ACTION_STOP_LISTEN:
-                        stopForeground(true);
-                        stopSelf();
-                        return START_NOT_STICKY;
-                    case ACTION_PAUSE_LISTEN:
-                        togglePlayPause();
 
-                        return START_NOT_STICKY;
-                    case ACTION_RETRY_LISTEN:
-                        numRetries = intent.getIntExtra(NUM_RETRIES, 0);
-                        break;
-                }
+        if (intent == null) return START_STICKY;
+
+        String action = intent.getAction();
+        if (action == null) {
+            //lanciato la prima volta: controllo la rete!
+            if (isNetworkDown()) {
+                stopServiceAndNotify(getString(R.string.internet_not_available));
+                return START_NOT_STICKY;
+            }
+        } else {
+            switch (action) {
+                case ACTION_STOP_LISTEN:
+                    stopForeground(true);
+                    stopSelf();
+                    return START_NOT_STICKY;
+                case ACTION_PAUSE_LISTEN:
+                    if (isNetworkDown()) {
+                        Toast.makeText(this, getString(R.string.internet_not_available), Toast.LENGTH_SHORT).show();
+
+                    } else {
+                        togglePlayPause();
+                    }
+                    return START_STICKY;
+                case ACTION_RETRY_LISTEN:
+                    numRetries = intent.getIntExtra(NUM_RETRIES, 0);
+                    break;
             }
         }
-        return super.onStartCommand(intent, flags, startId);
+
+        return START_STICKY;
     }
 
     private void togglePlayPause() {
@@ -446,7 +478,7 @@ public class PlayerService extends Service implements
             connectivityManager.unregisterNetworkCallback(mNetworkCallback);
         if (timer != null)
             timer.cancel();
-        if (mediaSession!= null)
+        if (mediaSession != null)
             mediaSession.release();
         setServiceRunning(null);
         NotificationManager notificationManager = getSystemService(NotificationManager.class);

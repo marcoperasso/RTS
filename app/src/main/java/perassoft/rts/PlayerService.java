@@ -40,7 +40,7 @@ public class PlayerService extends Service implements
 
     private static final String CHANNEL_ID = "RADIO_SERVICE_CHANNEL";
     private static final String NUM_RETRIES = "NUM_RETRIES";
-    private static final long NETWORK_TIMEOUT = 15 * 60000;//15 minuti
+    private static final long NETWORK_TIMEOUT = 20 * 60000;//20 minuti
     private static PlayerService serviceRunning = null;
     private static final int notificationId = 1;
     public static final String ACTION_STOP_LISTEN = "action_stop_listen";
@@ -117,6 +117,8 @@ public class PlayerService extends Service implements
             playWhenNetworkAvailable = serviceMediaPlayerPreparing || isPlaying();
             serviceMediaPlayerPreparing = false;
             setPlaying(false);
+            if (playWhenNetworkAvailable)
+                startTimer();
             errorHandled = true;
         } else {
             stopServiceAndNotify(getString(R.string.media_player_error));
@@ -273,14 +275,7 @@ public class PlayerService extends Service implements
                         playWhenNetworkAvailable = isPlaying();
 
                     if (playWhenNetworkAvailable) {
-                        timer = new CountDownTimer(NETWORK_TIMEOUT, NETWORK_TIMEOUT) {
-                            public void onTick(long millisUntilFinished) {
-                            }
-
-                            public void onFinish() {
-                                stopServiceAndNotify(getString(R.string.internet_not_available));
-                            }
-                        }.start();
+                        startTimer();
                     }
                     if (isPlaying())
                         pauseRadio();
@@ -299,6 +294,19 @@ public class PlayerService extends Service implements
         ;
         ConnectivityManager connectivityManager = getSystemService(ConnectivityManager.class);
         connectivityManager.requestNetwork(networkRequest, mNetworkCallback);
+    }
+
+    private void startTimer() {
+        if (timer != null)
+            timer.cancel();
+        timer = new CountDownTimer(NETWORK_TIMEOUT, NETWORK_TIMEOUT) {
+            public void onTick(long millisUntilFinished) {
+            }
+
+            public void onFinish() {
+                stopServiceAndNotify(getString(R.string.internet_not_available));
+            }
+        }.start();
     }
 
     @Override
@@ -472,10 +480,8 @@ public class PlayerService extends Service implements
 
     @Override
     public void onDestroy() {
-        if (mAudioManager != null) {
-            if (mFocusRequest != null)
-                mAudioManager.abandonAudioFocusRequest(mFocusRequest);
-        }
+        if (mAudioManager != null && mFocusRequest != null)
+            mAudioManager.abandonAudioFocusRequest(mFocusRequest);
 
         ConnectivityManager connectivityManager = getSystemService(ConnectivityManager.class);
         if (mNetworkCallback != null)

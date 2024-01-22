@@ -23,4 +23,5 @@
     <string name="producer">App creata da Marco Perasso</string>
     <string name="open">Apri</string>
     <string name="network_change_detected_restarting_service">Rilevato cambio di rete: riavvio del servizio in corso</string>
+    <string name="connecting">Connessione in corso…</string>
 </resources>

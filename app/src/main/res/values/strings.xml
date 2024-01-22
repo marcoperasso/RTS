@@ -22,6 +22,7 @@
     <string name="producer">App created by Marco Perasso</string>
     <string name="open">Open</string>
     <string name="network_change_detected_restarting_service">Network change detected: restarting service</string>
+    <string name="connecting">Connecting…</string>
     <!-- Strings used for fragments for navigation -->
 
 </resources>

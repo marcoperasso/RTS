@@ -62,6 +62,7 @@ public class PlayerService extends Service implements
     private MediaSession mediaSession;
     private Handler mainHandler;
 
+
     private void setServiceRunning(PlayerService svc) {
         synchronized (mRunningLock) {
             serviceRunning = svc;
@@ -77,7 +78,7 @@ public class PlayerService extends Service implements
 
     public static boolean isServicePlaying() {
         synchronized (mRunningLock) {
-            return serviceRunning != null && serviceRunning.isPlaying;
+            return serviceRunning != null && serviceRunning.isPlaying();
         }
     }
 
@@ -113,10 +114,9 @@ public class PlayerService extends Service implements
                 mPlayer.release();
                 mPlayer = null;
             }
-            playWhenNetworkAvailable = serviceMediaPlayerPreparing || isPlaying;
+            playWhenNetworkAvailable = serviceMediaPlayerPreparing || isPlaying();
             serviceMediaPlayerPreparing = false;
-            isPlaying = false;
-            sendServiceStateMessage();
+            setPlaying(false);
             errorHandled = true;
         } else {
             stopServiceAndNotify(getString(R.string.media_player_error));
@@ -177,13 +177,12 @@ public class PlayerService extends Service implements
 
         mBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_radio_playing)
-                .setContentTitle(getString(R.string.radio_running))
+                .setContentTitle(getString(R.string.connecting))
                 .setSilent(true)
                 .setAutoCancel(false)
                 .setOngoing(true)
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .addAction(R.drawable.ic_open, getString(R.string.open), pOpen)
-                .addAction(R.drawable.ic_pause, getString(R.string.pause), pPause)
                 .addAction(R.drawable.ic_stop, getString(R.string.stop), pStop);
         startForeground(notificationId, mBuilder.build());
 
@@ -271,7 +270,7 @@ public class PlayerService extends Service implements
                         mPlayer = null;
 
                     } else
-                        playWhenNetworkAvailable = isPlaying;
+                        playWhenNetworkAvailable = isPlaying();
 
                     if (playWhenNetworkAvailable) {
                         timer = new CountDownTimer(NETWORK_TIMEOUT, NETWORK_TIMEOUT) {
@@ -283,10 +282,10 @@ public class PlayerService extends Service implements
                             }
                         }.start();
                     }
-                    if (isPlaying)
+                    if (isPlaying())
                         pauseRadio();
                     networkLost = true;
-                    sendServiceStateMessage();
+                    setPlaying(false);
                 });
             }
 
@@ -339,7 +338,7 @@ public class PlayerService extends Service implements
 
     private void togglePlayPause() {
         if (mPlayer != null) {
-            if (isPlaying) {
+            if (isPlaying()) {
                 pausePlayer();
             } else {
                 tryPlay();
@@ -354,14 +353,19 @@ public class PlayerService extends Service implements
         mBuilder
                 .clearActions()
                 .addAction(R.drawable.ic_open, getString(R.string.open), pOpen);
-        if (isPlaying) {
+        if (isPlaying()) {
             mBuilder
                     .setContentTitle(getString(R.string.radio_running))
                     .addAction(R.drawable.ic_pause, getString(R.string.pause), pPause);
 
         } else {
+            String s = getString(R.string.radio_paused);
+            if (isNetworkDown()) {
+                s += " - ";
+                s += getString(R.string.internet_not_available);
+            }
             mBuilder
-                    .setContentTitle(getString(R.string.radio_paused))
+                    .setContentTitle(s)
                     .addAction(R.drawable.ic_pause, getString(R.string.resume), pPause);
         }
         mBuilder.addAction(R.drawable.ic_stop, getString(R.string.stop), pStop);
@@ -415,12 +419,12 @@ public class PlayerService extends Service implements
 
     void startPlayer() {
         mPlayer.start();
-        isPlaying = true;
+        setPlaying(true);
     }
 
     void pausePlayer() {
         mPlayer.pause();
-        isPlaying = false;
+        setPlaying(false);
     }
 
     // implementation of the OnAudioFocusChangeListener
@@ -450,7 +454,7 @@ public class PlayerService extends Service implements
                 // we handle all transient losses the same way because we never duck audio books
                 synchronized (mFocusLock) {
                     // we should only resume if playback was interrupted
-                    mResumeOnFocusGain = isPlaying;
+                    mResumeOnFocusGain = isPlaying();
                     mPlaybackDelayed = false;
                 }
                 pausePlayer();
@@ -488,5 +492,15 @@ public class PlayerService extends Service implements
         if (headSetReceiver != null)
             unregisterReceiver(headSetReceiver);
         super.onDestroy();
+    }
+
+    public boolean isPlaying() {
+        return isPlaying;
+    }
+
+    public void setPlaying(boolean playing) {
+        isPlaying = playing;
+        sendServiceStateMessage();
+        updateNotification();
     }
 }

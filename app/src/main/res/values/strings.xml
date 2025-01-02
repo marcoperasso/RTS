@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Radio Torriglia Sound</string>
+    <string name="app_name">Radio Trebbia Sound</string>
     <string name="local_service_stopped">Service stopped</string>
     <string name="local_service_started">Service started</string>
     <string name="local_service_label">Radio singing</string>
@@ -8,7 +8,7 @@
     <string name="follow_us_on_instagram">Follow us on Instagram</string>
     <string name="follow_us_on_facebook">Follow us on Facebook</string>
     <string name="follow_us_on_youtube">Follow us on YouTube</string>
-    <string name="welcome">Welcome to Radio Torriglia Sound</string>
+    <string name="welcome">Welcome to Radio Trebbia Sound</string>
     <string name="stop_button">Stop button</string>
     <string name="stop">Stop</string>
     <string name="resume">Resume</string>

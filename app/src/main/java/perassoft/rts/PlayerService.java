@@ -196,7 +196,7 @@ public class PlayerService extends Service implements
 
         mPlayer = new MediaPlayer();
         try {
-            mPlayer.setDataSource("https://sr10.inmystream.it/proxy/radioto1?mp=/stream&1735899232659");
+            mPlayer.setDataSource("https://sr10.inmystream.it/proxy/radioto1?mp=/stream");
         } catch (IOException e) {
             stopServiceAndNotify(e.getMessage());
             return;

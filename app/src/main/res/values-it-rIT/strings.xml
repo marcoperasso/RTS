@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Radio Trebbia Sound</string>
+    <string name="app_name">Radio Val Trebbia Sound</string>
     <string name="local_service_stopped">Servizio arrestato</string>
     <string name="local_service_started">Servizio avviato</string>
     <string name="local_service_label">Radio in esecuzone</string>
@@ -8,7 +8,7 @@
     <string name="follow_us_on_instagram">Seguici su Instagram</string>
     <string name="follow_us_on_facebook">Seguici su Facebook</string>
     <string name="follow_us_on_youtube">Seguici su YouTube</string>
-    <string name="welcome">Benvenuti su Radio Trebbia Sound</string>
+    <string name="welcome">Benvenuti su Radio Val Trebbia Sound</string>
     <string name="stop_button">Bottone di arresto</string>
     <string name="stop">Arresta</string>
     <string name="resume">Riprendi</string>

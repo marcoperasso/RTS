@@ -58,11 +58,6 @@ public class PlayerActivity extends AppCompatActivity {
         getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
         int height = displayMetrics.heightPixels;
         findViewById(R.id.ivLogo).getLayoutParams().height = (int) (height * .4);
-        TextView tv = findViewById(R.id.tvCredits);
-        final CharSequence text = tv.getText();
-        final SpannableString spannableString = new SpannableString( text );
-        spannableString.setSpan(new URLSpan(""), 0, spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        tv.setText(spannableString, TextView.BufferType.SPANNABLE);
     }
 
     @Override

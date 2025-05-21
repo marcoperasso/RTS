@@ -126,15 +126,4 @@
             android:src="@drawable/pause" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvCredits"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:gravity="center"
-        android:minHeight="48dp"
-        android:onClick="goToDeveloper"
-        android:text="@string/producer"
-        android:textAlignment="center"
-        android:textSize="14sp" />
 </RelativeLayout>

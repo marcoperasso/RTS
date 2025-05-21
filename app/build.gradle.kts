@@ -11,8 +11,8 @@ android {
         applicationId = "perassoft.rts"
         minSdk = 27
         targetSdk = 34
-        versionCode = 22
-        versionName = "1.2.0"
+        versionCode = 23
+        versionName = "1.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
